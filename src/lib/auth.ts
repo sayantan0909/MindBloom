@@ -1,6 +1,6 @@
 'use client';
 
-import { Auth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { Auth, createUserWithEmailAndPassword, sendEmailVerification, signOut } from 'firebase/auth';
 import { Firestore, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 
 export async function register(
@@ -13,6 +13,9 @@ export async function register(
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
 
+  // Send email verification
+  await sendEmailVerification(user);
+
   // Create user document in Firestore
   const userRef = doc(firestore, 'users', user.uid);
   await setDoc(userRef, {
@@ -23,6 +26,9 @@ export async function register(
     role: 'student',
     preferredLanguage: 'en'
   });
+  
+  // Sign the user out until they verify their email
+  await signOut(auth);
 
   return userCredential;
 }

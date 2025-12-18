@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MindBloomLogo } from '@/components/icons';
 import { useAuth } from '@/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -26,10 +26,31 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard');
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      if (!userCredential.user.emailVerified) {
+        await signOut(auth);
+        setError('Please verify your email before logging in. A new verification email has been sent.');
+        // Optionally, resend verification email
+        // await sendEmailVerification(userCredential.user);
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err: any) {
-      setError(err.message);
+       switch (err.code) {
+        case 'auth/user-not-found':
+          setError('No user found with this email.');
+          break;
+        case 'auth/wrong-password':
+          setError('Incorrect password. Please try again.');
+          break;
+        case 'auth/invalid-credential':
+           setError('Incorrect email or password. Please try again.');
+           break;
+        default:
+          setError('An unexpected error occurred. Please try again.');
+          console.error(err);
+          break;
+      }
     } finally {
       setLoading(false);
     }
