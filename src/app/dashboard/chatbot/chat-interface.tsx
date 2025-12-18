@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useActionState, useTransition } from 'react';
+import { useState, useRef, useEffect, useActionState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -35,13 +35,13 @@ export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
-  const [isPending, startTransition] = useTransition();
 
-  const [state, formAction] = useActionState(
+  const [state, formAction, isPending] = useActionState(
     async (_: any, formData: FormData) => {
       const userInput = formData.get('message') as string;
       if (!userInput) return null;
 
+      formRef.current?.reset();
       setMessages(prev => [...prev, { id: Date.now(), type: 'user', text: userInput }]);
       
       const result = await chat({ message: userInput });
@@ -56,18 +56,11 @@ export function ChatInterface() {
     },
     null
   );
-
-  const submitForm = (formData: FormData) => {
-    startTransition(() => {
-        formAction(formData);
-    });
-    formRef.current?.reset();
-  };
   
   const handleQuickMessage = (message: string) => {
     const formData = new FormData();
     formData.append('message', message);
-    submitForm(formData);
+    formAction(formData);
   };
 
   useEffect(() => {
@@ -122,7 +115,7 @@ export function ChatInterface() {
           </div>
         <form 
             ref={formRef}
-            action={submitForm}
+            action={formAction}
             className="flex items-center gap-2"
         >
           <Input name="message" placeholder="Type your message..." autoComplete="off" disabled={isPending} />

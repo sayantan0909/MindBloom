@@ -28,16 +28,7 @@ const ChatOutputSchema = z.object({
 export type ChatOutput = z.infer<typeof ChatOutputSchema>;
 
 export async function chat(input: ChatInput): Promise<ChatOutput> {
-  try {
     return await chatFlow(input);
-  } catch (e: any) {
-    console.error('Chat flow failed:', e);
-    // Check for specific error messages related to service availability
-    if (e.message?.includes('503 Service Unavailable') || e.message?.includes('model is overloaded')) {
-      return { error: 'The AI assistant is currently experiencing high demand. Please try again in a moment.' };
-    }
-    return { error: 'An unexpected error occurred. Please try again.' };
-  }
 }
 
 const prompt = ai.definePrompt({
@@ -69,10 +60,19 @@ const chatFlow = ai.defineFlow(
     outputSchema: ChatOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    if (!output) {
-      return { error: 'Failed to get a response from the AI.' };
+    try {
+        const {output} = await prompt(input);
+        if (!output) {
+          return { error: 'Failed to get a response from the AI.' };
+        }
+        return output;
+    } catch (e: any) {
+        console.error('Chat flow failed:', e);
+        // Check for specific error messages related to service availability
+        if (e.message?.includes('503 Service Unavailable') || e.message?.includes('model is overloaded')) {
+          return { error: 'The AI assistant is currently experiencing high demand. Please try again in a moment.' };
+        }
+        return { error: 'An unexpected error occurred. Please try again.' };
     }
-    return output;
   }
 );
