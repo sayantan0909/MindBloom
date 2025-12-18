@@ -36,8 +36,7 @@ export function ChatInterface() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const messagesCollectionRef = firestore ? collection(firestore, 'chatMessages') : null;
-  const messagesQuery = user && messagesCollectionRef ? query(messagesCollectionRef, where('userId', '==', user.uid), orderBy('timestamp', 'asc')) : null;
+  const messagesQuery = user && firestore ? query(collection(firestore, 'chatMessages'), where('userId', '==', user.uid), orderBy('timestamp', 'asc')) : null;
   const { data: initialDbMessages, isLoading: isLoadingMessages } = useCollection<Omit<Message, 'id'>>(messagesQuery);
 
   const [messages, setMessages] = useState<Message[]>([]);
