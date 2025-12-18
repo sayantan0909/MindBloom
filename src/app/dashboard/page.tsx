@@ -1,13 +1,18 @@
+'use client';
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Bot, ClipboardList, BookOpen } from "lucide-react";
 import Link from "next/link";
+import { useUser } from "@/firebase";
 
 export default function DashboardPage() {
+  const { user } = useUser();
+
   return (
     <div className="space-y-6">
       <div className="bg-card border rounded-lg p-6 md:p-8">
-        <h1 className="text-3xl md:text-4xl font-bold font-headline text-foreground">Welcome back, Student.</h1>
+        <h1 className="text-3xl md:text-4xl font-bold font-headline text-foreground">Welcome back, {user?.displayName || 'Student'}.</h1>
         <p className="text-muted-foreground mt-2 text-lg">
           Remember, taking care of your mind is a journey, not a destination. We're here to support you every step of the way.
         </p>
