@@ -1,0 +1,408 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the mental health support system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the user."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user account was created.",
+          "format": "date-time"
+        },
+        "role": {
+          "type": "string",
+          "description": "Role of the user, e.g., 'student', 'counselor', 'admin'.",
+          "format": "string"
+        },
+        "preferredLanguage": {
+          "type": "string",
+          "description": "Preferred language of the user for localization.",
+          "format": "string"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name",
+        "createdAt",
+        "role",
+        "preferredLanguage"
+      ]
+    },
+    "ScreeningResult": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ScreeningResult",
+      "type": "object",
+      "description": "Represents the result of a mental health screening test.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the screening result."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N ScreeningResult)"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of screening test (e.g., 'PHQ-9', 'GAD-7')."
+        },
+        "score": {
+          "type": "number",
+          "description": "The total score from the screening test."
+        },
+        "interpretation": {
+          "type": "string",
+          "description": "Interpretation of the score (e.g., 'Mild depression')."
+        },
+        "date": {
+          "type": "string",
+          "description": "Date when the screening test was taken.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "type",
+        "score",
+        "interpretation",
+        "date"
+      ]
+    },
+    "MentalHealthResource": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MentalHealthResource",
+      "type": "object",
+      "description": "Represents a mental health resource (e.g., article, video, audio).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the resource."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category of the resource (e.g., 'Depression', 'Anxiety')."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the resource."
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of resource (e.g., 'article', 'video', 'audio')."
+        },
+        "url": {
+          "type": "string",
+          "description": "URL where the resource can be accessed.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "category",
+        "title",
+        "type",
+        "url"
+      ]
+    },
+    "Counselor": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Counselor",
+      "type": "object",
+      "description": "Represents a mental health counselor.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the counselor."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the counselor."
+        },
+        "specialty": {
+          "type": "string",
+          "description": "Specialty of the counselor (e.g., 'Depression & Anxiety')."
+        },
+        "languages": {
+          "type": "array",
+          "description": "List of languages the counselor can speak.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "specialty",
+        "languages"
+      ]
+    },
+    "CounselorBooking": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CounselorBooking",
+      "type": "object",
+      "description": "Represents a booking for a session with a counselor.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the booking."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N CounselorBooking)"
+        },
+        "counselorId": {
+          "type": "string",
+          "description": "Reference to Counselor. (Relationship: Counselor 1:N CounselorBooking)"
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of the appointment.",
+          "format": "date-time"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Reason for booking the appointment."
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the booking (e.g., 'confirmed', 'pending', 'cancelled')."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "counselorId",
+        "date",
+        "reason",
+        "status"
+      ]
+    },
+    "ForumPost": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ForumPost",
+      "type": "object",
+      "description": "Represents a post in the peer support forum.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the forum post."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N ForumPost)"
+        },
+        "forumType": {
+          "type": "string",
+          "description": "Type of forum (e.g., 'general', 'academic', 'social')."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the forum post."
+        },
+        "content": {
+          "type": "string",
+          "description": "Content of the forum post."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the post was created.",
+          "format": "date-time"
+        },
+        "likes": {
+          "type": "number",
+          "description": "Number of likes for the post.",
+          "format": "number"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "forumType",
+        "title",
+        "content",
+        "createdAt"
+      ]
+    },
+    "ChatMessage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ChatMessage",
+      "type": "object",
+      "description": "Represents a message in the AI-driven chatbot.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the chat message."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N ChatMessage)"
+        },
+        "content": {
+          "type": "string",
+          "description": "Content of the chat message."
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of message (e.g., 'user', 'bot')."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp indicating when the message was sent.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "content",
+        "type",
+        "timestamp"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. Secured via path-based ownership (`request.auth.uid == userId`).",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/screeningResults/{resultId}",
+        "definition": {
+          "entityName": "ScreeningResult",
+          "schema": {
+            "$ref": "#/backend/entities/ScreeningResult"
+          },
+          "description": "Stores screening results specific to a user. Secured via path-based ownership (`request.auth.uid == userId`).",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "resultId",
+              "description": "The unique identifier of the screening result."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/mentalHealthResources/{resourceId}",
+        "definition": {
+          "entityName": "MentalHealthResource",
+          "schema": {
+            "$ref": "#/backend/entities/MentalHealthResource"
+          },
+          "description": "Stores publicly accessible mental health resources. Public read access.",
+          "params": [
+            {
+              "name": "resourceId",
+              "description": "The unique identifier of the mental health resource."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/counselors/{counselorId}",
+        "definition": {
+          "entityName": "Counselor",
+          "schema": {
+            "$ref": "#/backend/entities/Counselor"
+          },
+          "description": "Stores counselor profiles. Accessible for listing.",
+          "params": [
+            {
+              "name": "counselorId",
+              "description": "The unique identifier of the counselor."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/counselorBookings/{bookingId}",
+        "definition": {
+          "entityName": "CounselorBooking",
+          "schema": {
+            "$ref": "#/backend/entities/CounselorBooking"
+          },
+          "description": "Stores all counselor bookings. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "bookingId",
+              "description": "The unique identifier of the counselor booking."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/forumPosts/{postId}",
+        "definition": {
+          "entityName": "ForumPost",
+          "schema": {
+            "$ref": "#/backend/entities/ForumPost"
+          },
+          "description": "Stores peer support forum posts.  Moderation rules need to be applied.",
+          "params": [
+            {
+              "name": "postId",
+              "description": "The unique identifier of the forum post."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/chatMessages/{messageId}",
+        "definition": {
+          "entityName": "ChatMessage",
+          "schema": {
+            "$ref": "#/backend/entities/ChatMessage"
+          },
+          "description": "Stores messages for the AI Chatbot feature.",
+          "params": [
+            {
+              "name": "messageId",
+              "description": "The unique identifier of the chat message."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to meet the application's requirements for a secure, scalable, and debuggable mental health support system. It prioritizes authorization independence, clarity of intent, and adheres to the DBAC principle. The structure leverages denormalization and structural segregation to achieve these goals.\n\n*   **Authorization Independence:** The structure avoids hierarchical authorization dependencies (`get()`) by denormalizing authorization context. For example, CounselorBooking includes the `userId` to facilitate direct rule evaluation based on the authenticated user.\n*   **Clarity of Intent:** The structure uses explicit path-based ownership for private data (e.g., `/users/{userId}/screeningResults/{resultId}`). This makes authorization intent clear and easy to debug.\n*   **DBAC (No Custom Claims):** User roles (if implemented) would be stored directly in the `/users/{userId}` document (the role property). Authorization rules rely solely on `request.auth.uid` and document data.\n*   **QAPs (Rules are not Filters):** The structure supports secure `list` operations by segregating data based on access needs. For example, public mental health resources are stored in a dedicated `/mentalHealthResources` collection. The `/users/{userId}/screeningResults` subcollection enables secure listing of a user's own screening results.\n*   **Invariants:** The structure supports data integrity by enforcing ownership via path-based rules and leveraging server timestamps for `createdAt` fields (via client code using `FieldValue.serverTimestamp()`).\n\nDenormalization Strategy:\n\n*   CounselorBooking: Includes `userId` to enable direct rule evaluation based on the authenticated user's ID, without needing to fetch the user document.\n\nStructural Segregation:\n\n*   `/users/{userId}`: Stores user profiles and is secured using path-based ownership.\n*   `/users/{userId}/screeningResults/{resultId}`: Stores screening results specific to a user, secured by path-based ownership.\n*   `/mentalHealthResources`: Stores publicly accessible mental health resources.\n*   `/counselors`: Stores counselor profiles, accessible for listing.\n*   `/counselorBookings`: Stores all counselor bookings.\n*   `/forumPosts`: Stores peer support forum posts."
+  }
+}
