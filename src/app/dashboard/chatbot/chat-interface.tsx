@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useActionState, useTransition } from 'react';
+import { useState, useRef, useEffect, useActionState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -36,14 +36,47 @@ export function ChatInterface() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const messagesCollectionRef = collection(firestore, 'chatMessages');
-  const messagesQuery = user ? query(messagesCollectionRef, where('userId', '==', user.uid), orderBy('timestamp', 'asc')) : null;
+  const messagesCollectionRef = firestore ? collection(firestore, 'chatMessages') : null;
+  const messagesQuery = user && messagesCollectionRef ? query(messagesCollectionRef, where('userId', '==', user.uid), orderBy('timestamp', 'asc')) : null;
   const { data: initialDbMessages, isLoading: isLoadingMessages } = useCollection<Omit<Message, 'id'>>(messagesQuery);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
-  const [isPending, startTransition] = useTransition();
+
+  const [state, formAction, isPending] = useActionState(
+    async (_: any, formData: FormData) => {
+      const userInput = formData.get('message') as string;
+      if (!userInput || !user || !firestore) return null;
+
+      formRef.current?.reset();
+      
+      const userMessage: Omit<Message, 'id'> = { role: 'user', content: userInput, timestamp: serverTimestamp() };
+      setMessages(prev => [...prev, { ...userMessage, id: Date.now().toString() }]);
+
+      if (user && firestore) {
+        await addDoc(collection(firestore, 'chatMessages'), { ...userMessage, userId: user.uid });
+      }
+      
+      const chatHistory = messages.map(m => ({ role: m.role === 'bot' ? 'model' : 'user', content: m.content })).slice(-10);
+
+      const result = await chat({ message: userInput, history: chatHistory });
+
+      if (result.response) {
+        const botMessage: Omit<Message, 'id'> = { role: 'bot', content: result.response, timestamp: serverTimestamp() };
+        setMessages(prev => [...prev, { ...botMessage, id: (Date.now() + 1).toString() }]);
+        if (user && firestore) {
+            await addDoc(collection(firestore, 'chatMessages'), { content: result.response, role: 'model', userId: user.uid, timestamp: serverTimestamp() });
+        }
+      } else if (result.error) {
+        const errorMessage: Omit<Message, 'id'> = { role: 'bot', content: result.error, timestamp: serverTimestamp() };
+        setMessages(prev => [...prev, { ...errorMessage, id: (Date.now() + 1).toString() }]);
+      }
+      
+      return null;
+    },
+    null
+  );
 
   useEffect(() => {
     if (initialDbMessages) {
@@ -55,47 +88,11 @@ export function ChatInterface() {
         }
     }
   }, [initialDbMessages]);
-
-  const [_, formAction] = useActionState(
-    async (_: any, formData: FormData) => {
-      const userInput = formData.get('message') as string;
-      if (!userInput || !user) return null;
-
-      formRef.current?.reset();
-      
-      const userMessage: Omit<Message, 'id'> = { role: 'user', content: userInput, timestamp: serverTimestamp() };
-      setMessages(prev => [...prev, { ...userMessage, id: Date.now().toString() }]);
-
-      if (user && firestore) {
-        await addDoc(messagesCollectionRef, { ...userMessage, userId: user.uid });
-      }
-      
-      const chatHistory = messages.map(m => ({ role: m.role === 'bot' ? 'model' : 'user', content: m.content })).slice(-10);
-
-      const result = await chat({ message: userInput, history: chatHistory });
-
-      if (result.response) {
-        const botMessage: Omit<Message, 'id'> = { role: 'bot', content: result.response, timestamp: serverTimestamp() };
-        setMessages(prev => [...prev, { ...botMessage, id: (Date.now() + 1).toString() }]);
-        if (user && firestore) {
-            await addDoc(messagesCollectionRef, { content: result.response, role: 'model', userId: user.uid, timestamp: serverTimestamp() });
-        }
-      } else if (result.error) {
-        const errorMessage: Omit<Message, 'id'> = { role: 'bot', content: result.error, timestamp: serverTimestamp() };
-        setMessages(prev => [...prev, { ...errorMessage, id: (Date.now() + 1).toString() }]);
-      }
-      
-      return null;
-    },
-    null
-  );
   
   const handleQuickMessage = (message: string) => {
-    startTransition(() => {
-        const formData = new FormData();
-        formData.append('message', message);
-        formAction(formData);
-    });
+    const formData = new FormData();
+    formData.append('message', message);
+    formAction(formData);
   };
 
   useEffect(() => {
