@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useActionState } from 'react';
+import { useState, useRef, useEffect, useActionState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -34,8 +34,10 @@ const quickMessages = [
 export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [isPending, startTransition] = useTransition();
 
-  const [state, formAction, isPending] = useActionState(
+
+  const [state, formAction] = useActionState(
     async (_: any, formData: FormData) => {
       const userInput = formData.get('message') as string;
       if (!userInput) return;
@@ -53,7 +55,9 @@ export function ChatInterface() {
   const handleQuickMessage = (message: string) => {
     const formData = new FormData();
     formData.append('message', message);
-    formAction(formData);
+    startTransition(() => {
+        formAction(formData);
+    });
   };
 
 
@@ -113,7 +117,11 @@ export function ChatInterface() {
             action={formAction}
             ref={formRef}
             onSubmit={(e) => {
-                formAction(new FormData(e.currentTarget));
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                startTransition(() => {
+                    formAction(formData);
+                });
                 formRef.current?.reset();
             }} 
             className="flex items-center gap-2"
