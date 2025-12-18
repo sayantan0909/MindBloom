@@ -1,3 +1,88 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "1",
+      "description": "Abstract shapes representing thoughts",
+      "imageUrl": "https://images.unsplash.com/photo-1547782793-e1444139967a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxhYnN0cmFjdCUyMHRob3VnaHRzfGVufDB8fHx8MTc2NjA2ODQ5MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abstract thoughts"
+    },
+    {
+      "id": "2",
+      "description": "A person studying calmly",
+      "imageUrl": "https://images.unsplash.com/photo-1709924168698-620ea32c3488?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxjYWxtJTIwc3R1ZHl8ZW58MHx8fHwxNzY2MDY4NDkxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "calm study"
+    },
+    {
+      "id": "3",
+      "description": "Soothing nature scene with water",
+      "imageUrl": "https://images.unsplash.com/photo-1468581264429-2548ef9eb732?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxjYWxtJTIwd2F0ZXJ8ZW58MHx8fHwxNzY1OTkyNTk3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "calm water"
+    },
+    {
+      "id": "4",
+      "description": "A peaceful night sky",
+      "imageUrl": "https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxuaWdodCUyMHNreXxlbnwwfHx8fDE3NjU5Nzg5MzN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "night sky"
+    },
+    {
+      "id": "5",
+      "description": "A helping hand reaching out",
+      "imageUrl": "https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxoZWxwaW5nJTIwaGFuZHxlbnwwfHx8fDE3NjYwMDQ3OTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "helping hand"
+    },
+    {
+      "id": "6",
+      "description": "A brain with interconnected thoughts",
+      "imageUrl": "https://images.unsplash.com/photo-1732704573802-8ec393009148?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxicmFpbiUyMGNvbm5lY3Rpb25zfGVufDB8fHx8MTc2NjA2ODQ5MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "brain connections"
+    },
+    {
+      "id": "7",
+      "description": "Geometric shapes forming a box",
+      "imageUrl": "https://images.unsplash.com/photo-1604782666037-3c63d50052db?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxnZW9tZXRyaWMlMjBzaGFwZXN8ZW58MHx8fHwxNzY2MDQ3NjA2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "geometric shapes"
+    },
+    {
+      "id": "8",
+      "description": "A clock and a calendar",
+      "imageUrl": "https://images.unsplash.com/photo-1730860635175-e9ee42809a82?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8Y2xvY2slMjBjYWxlbmRhcnxlbnwwfHx8fDE3NjYwNjg0OTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "clock calendar"
+    },
+    {
+      "id": "9",
+      "description": "A simple, elegant maze",
+      "imageUrl": "https://images.unsplash.com/photo-1583077300486-8e4e2c773422?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxlbGVnYW50JTIwbWF6ZXxlbnwwfHx8fDE3NjYwNjg0OTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "elegant maze"
+    },
+    {
+      "id": "10",
+      "description": "Flowing lines and patterns",
+      "imageUrl": "https://images.unsplash.com/photo-1764435447910-dc9a92c4472b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxmbG93JTIwbGluZXN8ZW58MHx8fHwxNzY2MDY4NDkxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "flow lines"
+    },
+    {
+      "id": "avatar1",
+      "description": "Avatar for a female counselor",
+      "imageUrl": "https://images.unsplash.com/photo-1609505848912-b7c3b8b4beda?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc2NjAxMjI0M3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman portrait"
+    },
+    {
+      "id": "avatar2",
+      "description": "Avatar for a male counselor",
+      "imageUrl": "https://images.unsplash.com/photo-1583195763986-0231686dcd43?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxtYW4lMjBwb3J0cmFpdHxlbnwwfHx8fDE3NjYwNTI3Njl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "man portrait"
+    },
+    {
+      "id": "avatar3",
+      "description": "Avatar for a female counselor",
+      "imageUrl": "https://images.unsplash.com/photo-1701096351544-7de3c7fa0272?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHx3b21hbiUyMHByb2Zlc3Npb25hbHxlbnwwfHx8fDE3NjYwMDM2OTZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman professional"
+    },
+    {
+      "id": "avatar4",
+      "description": "Avatar for a male counselor",
+      "imageUrl": "https://images.unsplash.com/photo-1556157382-97eda2d62296?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtYW4lMjBwcm9mZXNzaW9uYWx8ZW58MHx8fHwxNzY2MDI2MzU1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "man professional"
+    }
+  ]
 }
