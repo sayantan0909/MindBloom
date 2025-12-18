@@ -21,19 +21,29 @@ const ChatInputSchema = z.object({
 export type ChatInput = z.infer<typeof ChatInputSchema>;
 
 const ChatOutputSchema = z.object({
-  response: z.string().describe('The chatbot response to the user message.'),
+  response: z.string().describe('The chatbot response to the user message.').optional(),
+  error: z.string().describe('An error message if the chatbot failed to respond.').optional(),
 });
 
 export type ChatOutput = z.infer<typeof ChatOutputSchema>;
 
 export async function chat(input: ChatInput): Promise<ChatOutput> {
-  return chatFlow(input);
+  try {
+    return await chatFlow(input);
+  } catch (e: any) {
+    console.error('Chat flow failed:', e);
+    // Check for specific error messages related to service availability
+    if (e.message?.includes('503 Service Unavailable') || e.message?.includes('model is overloaded')) {
+      return { error: 'The AI assistant is currently experiencing high demand. Please try again in a moment.' };
+    }
+    return { error: 'An unexpected error occurred. Please try again.' };
+  }
 }
 
 const prompt = ai.definePrompt({
   name: 'mentalHealthChatPrompt',
   input: {schema: ChatInputSchema},
-  output: {schema: ChatOutputSchema},
+  output: {schema: z.object({ response: z.string() })},
   prompt: `You are a mental health support chatbot designed to provide coping suggestions and, if necessary, refer users to professional help.
 
   Respond to the user message: "{{message}}".
@@ -60,6 +70,9 @@ const chatFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      return { error: 'Failed to get a response from the AI.' };
+    }
+    return output;
   }
 );

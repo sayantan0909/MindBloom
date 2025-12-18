@@ -34,32 +34,41 @@ const quickMessages = [
 export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const [isPending, startTransition] = useTransition();
-
 
   const [state, formAction] = useActionState(
     async (_: any, formData: FormData) => {
       const userInput = formData.get('message') as string;
-      if (!userInput) return;
-      
+      if (!userInput) return null;
+
       setMessages(prev => [...prev, { id: Date.now(), type: 'user', text: userInput }]);
       
       const result = await chat({ message: userInput });
+
+      if (result.response) {
+        setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: result.response! }]);
+      } else if (result.error) {
+        setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: result.error }]);
+      }
       
-      setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: result.response }]);
       return null;
     },
     null
   );
+
+  const submitForm = (formData: FormData) => {
+    startTransition(() => {
+        formAction(formData);
+    });
+    formRef.current?.reset();
+  };
   
   const handleQuickMessage = (message: string) => {
     const formData = new FormData();
     formData.append('message', message);
-    startTransition(() => {
-        formAction(formData);
-    });
+    submitForm(formData);
   };
-
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -70,8 +79,6 @@ export function ChatInterface() {
     }
   }, [messages]);
 
-  const formRef = useRef<HTMLFormElement>(null);
-  
   return (
     <div className="flex flex-col h-full">
       <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
@@ -114,16 +121,8 @@ export function ChatInterface() {
               ))}
           </div>
         <form 
-            action={formAction}
             ref={formRef}
-            onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.currentTarget);
-                startTransition(() => {
-                    formAction(formData);
-                });
-                formRef.current?.reset();
-            }} 
+            action={submitForm}
             className="flex items-center gap-2"
         >
           <Input name="message" placeholder="Type your message..." autoComplete="off" disabled={isPending} />
