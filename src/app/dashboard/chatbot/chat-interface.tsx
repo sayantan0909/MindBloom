@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useActionState } from 'react';
+import { useState, useRef, useEffect, useActionState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -8,19 +8,20 @@ import { chat } from '@/ai/flows/ai-driven-chatbot';
 import { Bot, User, Loader2, Send } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { useFormStatus } from 'react-dom';
+import { useUser, useFirestore, useCollection } from '@/firebase';
+import { collection, addDoc, serverTimestamp, query, orderBy, where } from 'firebase/firestore';
 
 type Message = {
-  id: number;
-  type: 'user' | 'bot';
-  text: string;
+  id: string;
+  role: 'user' | 'bot' | 'model';
+  content: string;
+  timestamp?: any;
 };
 
-const initialMessages: Message[] = [
+const initialMessages: Omit<Message, 'id'>[] = [
   {
-    id: 1,
-    type: 'bot',
-    text: "Hello! I'm here to provide mental health support and resources. How are you feeling today?",
+    role: 'bot',
+    content: "Hello! I'm here to provide mental health support and resources. How are you feeling today?",
   },
 ];
 
@@ -32,24 +33,56 @@ const quickMessages = [
 ];
 
 export function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const messagesCollectionRef = collection(firestore, 'chatMessages');
+  const messagesQuery = user ? query(messagesCollectionRef, where('userId', '==', user.uid), orderBy('timestamp', 'asc')) : null;
+  const { data: initialDbMessages, isLoading: isLoadingMessages } = useCollection<Omit<Message, 'id'>>(messagesQuery);
+
+  const [messages, setMessages] = useState<Message[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const [isPending, startTransition] = useTransition();
 
-  const [state, formAction, isPending] = useActionState(
+  useEffect(() => {
+    if (initialDbMessages) {
+        const mappedMessages = initialDbMessages.map(m => ({ ...m, role: m.role === 'model' ? 'bot' : m.role })) as Message[];
+        if (mappedMessages.length === 0) {
+            setMessages(initialMessages.map(m => ({...m, id: Math.random().toString()})));
+        } else {
+            setMessages(mappedMessages);
+        }
+    }
+  }, [initialDbMessages]);
+
+  const [_, formAction] = useActionState(
     async (_: any, formData: FormData) => {
       const userInput = formData.get('message') as string;
-      if (!userInput) return null;
+      if (!userInput || !user) return null;
 
       formRef.current?.reset();
-      setMessages(prev => [...prev, { id: Date.now(), type: 'user', text: userInput }]);
       
-      const result = await chat({ message: userInput });
+      const userMessage: Omit<Message, 'id'> = { role: 'user', content: userInput, timestamp: serverTimestamp() };
+      setMessages(prev => [...prev, { ...userMessage, id: Date.now().toString() }]);
+
+      if (user && firestore) {
+        await addDoc(messagesCollectionRef, { ...userMessage, userId: user.uid });
+      }
+      
+      const chatHistory = messages.map(m => ({ role: m.role === 'bot' ? 'model' : 'user', content: m.content })).slice(-10);
+
+      const result = await chat({ message: userInput, history: chatHistory });
 
       if (result.response) {
-        setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: result.response! }]);
+        const botMessage: Omit<Message, 'id'> = { role: 'bot', content: result.response, timestamp: serverTimestamp() };
+        setMessages(prev => [...prev, { ...botMessage, id: (Date.now() + 1).toString() }]);
+        if (user && firestore) {
+            await addDoc(messagesCollectionRef, { content: result.response, role: 'model', userId: user.uid, timestamp: serverTimestamp() });
+        }
       } else if (result.error) {
-        setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: result.error }]);
+        const errorMessage: Omit<Message, 'id'> = { role: 'bot', content: result.error, timestamp: serverTimestamp() };
+        setMessages(prev => [...prev, { ...errorMessage, id: (Date.now() + 1).toString() }]);
       }
       
       return null;
@@ -58,9 +91,11 @@ export function ChatInterface() {
   );
   
   const handleQuickMessage = (message: string) => {
-    const formData = new FormData();
-    formData.append('message', message);
-    formAction(formData);
+    startTransition(() => {
+        const formData = new FormData();
+        formData.append('message', message);
+        formAction(formData);
+    });
   };
 
   useEffect(() => {
@@ -70,23 +105,28 @@ export function ChatInterface() {
              viewport.scrollTop = viewport.scrollHeight;
         }
     }
-  }, [messages]);
+  }, [messages, isPending]);
 
   return (
     <div className="flex flex-col h-full">
       <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
         <div className="space-y-6">
-          {messages.map((message) => (
-            <div key={message.id} className={cn('flex items-start gap-3', message.type === 'user' ? 'justify-end' : 'justify-start')}>
-              {message.type === 'bot' && (
+          {isLoadingMessages && (
+            <div className="flex justify-center items-center h-full">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          )}
+          {!isLoadingMessages && messages.map((message) => (
+            <div key={message.id} className={cn('flex items-start gap-3', message.role === 'user' ? 'justify-end' : 'justify-start')}>
+              {message.role === 'bot' && (
                 <Avatar className="w-8 h-8 bg-primary/20 text-primary">
                   <AvatarFallback><Bot size={20} /></AvatarFallback>
                 </Avatar>
               )}
-              <div className={cn('max-w-sm md:max-w-md lg:max-w-lg rounded-2xl px-4 py-3', message.type === 'user' ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-card border rounded-bl-none')}>
-                <p className="text-sm leading-relaxed">{message.text}</p>
+              <div className={cn('max-w-sm md:max-w-md lg:max-w-lg rounded-2xl px-4 py-3', message.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-card border rounded-bl-none')}>
+                <p className="text-sm leading-relaxed">{message.content}</p>
               </div>
-              {message.type === 'user' && (
+              {message.role === 'user' && (
                 <Avatar className="w-8 h-8">
                   <AvatarFallback><User size={20} /></AvatarFallback>
                 </Avatar>
