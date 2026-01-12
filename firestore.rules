@@ -16,7 +16,7 @@ service cloud.firestore {
      * Key Security Decisions:
      * - Default Deny: All operations are denied unless explicitly permitted.
      * - User Privacy: Listing the top-level `/users` collection is forbidden to prevent user enumeration.
-     * - Secure Queries: Global `list` operations are disabled on sensitive collections like `/counselorBookings` and `/chatMessages`
+     * - Secure Queries: Global `list` operations are disabled on sensitive collections like `/counselorBookings`
      *   to prevent data leakage, requiring clients to query for specific data they are authorized to see.
      * - Admin-Managed Content: Public resource collections (`mentalHealthResources`, `counselors`) are read-only for clients.
      *   Content must be managed through the Firebase Console or a trusted server environment.
@@ -178,8 +178,8 @@ service cloud.firestore {
      * @principle Enforces document ownership via a denormalized field for highly private data, preventing data leakage.
      */
     match /chatMessages/{messageId} {
-      allow get: if isExistingOwner(resource.data);
-      allow list: if request.auth.uid == request.query.get('where_userId_eq');
+      allow read: if isExistingOwner(resource.data);
+      allow list: if isSignedIn() && request.query.where[0] == 'userId' && request.query.where[2] == request.auth.uid;
       allow create: if isCreatingOwnedDoc();
       allow update: if isExistingOwner(resource.data) && isImmutable('userId');
       allow delete: if isExistingOwner(resource.data);
