@@ -14,6 +14,12 @@ type Message = {
   content: string;
 };
 
+// Map roles for the generative AI model
+const roleMap = {
+    'user': 'user',
+    'model': 'model'
+};
+
 export default function ChatbotPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -43,36 +49,32 @@ export default function ChatbotPage() {
     setInput('');
     setIsLoading(true);
 
-    let errorMessage: Message = { role: 'model', content: "An unexpected error occurred. Please try again." };
+    const apiHistory = messages.map(m => ({
+        role: roleMap[m.role],
+        parts: [{ text: m.content }]
+    }));
 
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-            message: input, 
-            history: messages.map(m => ({role: m.role, content: m.content})) 
+            message: input,
+            history: apiHistory
         }),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        // Use data.error from the server's JSON response, or a fallback message.
-        errorMessage.content = errorData.error || 'Failed to get AI response.';
-        setMessages((prev) => [...prev, errorMessage]);
+      const data = await res.json();
+
+      if (!res.ok || !data.reply) {
+        setMessages((prev) => [...prev, { role: 'model', content: data.reply || "I'm here with you. Please try again." }]);
       } else {
-        const data = await res.json();
-        if (data.reply) {
-          setMessages((prev) => [...prev, { role: 'model', content: data.reply }]);
-        } else {
-          errorMessage.content = "AI response was empty.";
-          setMessages((prev) => [...prev, errorMessage]);
-        }
+        setMessages((prev) => [...prev, { role: 'model', content: data.reply }]);
       }
+
     } catch (error: any) {
       console.error(error);
-      // This will catch network errors or errors from the fetch itself.
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, { role: 'model', content: "An unexpected error occurred. Please try again." }]);
     } finally {
       setIsLoading(false);
     }
@@ -135,6 +137,7 @@ export default function ChatbotPage() {
                   placeholder="Type how you're feeling..."
                   autoComplete="off"
                   disabled={isLoading}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { handleSendMessage(e); }}}
                 />
                 <Button type="submit" disabled={isLoading || !input.trim()}>
                   <Send className="h-4 w-4" />
