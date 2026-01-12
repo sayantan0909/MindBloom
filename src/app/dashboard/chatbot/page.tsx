@@ -43,6 +43,8 @@ export default function ChatbotPage() {
     setInput('');
     setIsLoading(true);
 
+    let errorMessage: Message = { role: 'model', content: "An unexpected error occurred. Please try again." };
+
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
@@ -53,22 +55,23 @@ export default function ChatbotPage() {
         }),
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
+        const errorData = await res.json();
         // Use data.error from the server's JSON response, or a fallback message.
-        throw new Error(data.error || 'Failed to get AI response.');
-      }
-      
-      if (data.reply) {
-        setMessages((prev) => [...prev, { role: 'model', content: data.reply }]);
+        errorMessage.content = errorData.error || 'Failed to get AI response.';
+        setMessages((prev) => [...prev, errorMessage]);
       } else {
-        throw new Error("AI response was empty.");
+        const data = await res.json();
+        if (data.reply) {
+          setMessages((prev) => [...prev, { role: 'model', content: data.reply }]);
+        } else {
+          errorMessage.content = "AI response was empty.";
+          setMessages((prev) => [...prev, errorMessage]);
+        }
       }
-
     } catch (error: any) {
       console.error(error);
-      const errorMessage: Message = { role: 'model', content: error.message || "An unexpected error occurred. Please try again." };
+      // This will catch network errors or errors from the fetch itself.
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
