@@ -56,7 +56,7 @@ export default function ChatbotPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        // Use data.error from the server's JSON response
+        // Use data.error from the server's JSON response, or a fallback message.
         throw new Error(data.error || 'Failed to get AI response.');
       }
       
@@ -68,7 +68,7 @@ export default function ChatbotPage() {
 
     } catch (error: any) {
       console.error(error);
-      const errorMessage: Message = { role: 'model', content: error.message || "I'm here. Please try again." };
+      const errorMessage: Message = { role: 'model', content: error.message || "An unexpected error occurred. Please try again." };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
