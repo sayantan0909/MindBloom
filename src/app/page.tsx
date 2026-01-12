@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MindBloomLogo } from '@/components/icons';
 import { useAuth } from '@/firebase';
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, sendEmailVerification } from 'firebase/auth';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -30,8 +30,8 @@ export default function LoginPage() {
       if (!userCredential.user.emailVerified) {
         await signOut(auth);
         setError('Please verify your email before logging in. A new verification email has been sent.');
-        // Optionally, resend verification email
-        // await sendEmailVerification(userCredential.user);
+        // Resend verification email
+        await sendEmailVerification(userCredential.user);
       } else {
         router.push('/dashboard');
       }
