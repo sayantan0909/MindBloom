@@ -9,7 +9,7 @@ import { Bot, User, Loader2, Send } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useCollection } from '@/firebase';
-import { collection, addDoc, serverTimestamp, query, orderBy, where, Firestore } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, orderBy, where, Firestore, DocumentData } from 'firebase/firestore';
 
 type Message = {
   id: string;
@@ -18,12 +18,10 @@ type Message = {
   timestamp?: any;
 };
 
-const initialMessages: Omit<Message, 'id'>[] = [
-  {
-    role: 'bot',
-    content: "Hello! I'm MindBloom, an AI assistant. I'm here to provide mental health support and resources. How are you feeling today?",
-  },
-];
+const initialBotMessage: Omit<Message, 'id'> = {
+  role: 'bot',
+  content: "Hello! I'm MindBloom, an AI assistant. I'm here to provide mental health support and resources. How are you feeling today?",
+};
 
 const quickMessages = [
     "I'm feeling anxious.",
@@ -55,13 +53,15 @@ function ChatHistory({ user, firestore, messages, setMessages, isPending }: Chat
   useEffect(() => {
     if (initialDbMessages) {
       const mappedMessages = initialDbMessages.map(m => ({ ...m, role: m.role === 'model' ? 'bot' : m.role })) as Message[];
-      if (mappedMessages.length === 0 && !isLoadingMessages) {
-        setMessages(initialMessages.map(m => ({ ...m, id: Math.random().toString() })));
-      } else {
-        setMessages(mappedMessages);
-      }
+      
+      const allMessages = mappedMessages.length > 0
+        ? mappedMessages
+        : [{ ...initialBotMessage, id: 'initial-bot-message' }];
+
+      setMessages(allMessages);
+
     } else if (!isLoadingMessages) {
-      setMessages(initialMessages.map(m => ({ ...m, id: Math.random().toString() })));
+       setMessages([{ ...initialBotMessage, id: 'initial-bot-message' }]);
     }
   }, [initialDbMessages, isLoadingMessages, setMessages]);
   
@@ -79,7 +79,7 @@ function ChatHistory({ user, firestore, messages, setMessages, isPending }: Chat
       <div className="space-y-6">
         {isLoadingMessages && messages.length === 0 && (
           <div className="flex justify-center items-center h-full">
-            <Loader2 className="h-8 w-8 animate-spin" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         )}
         {messages.map((message) => (
@@ -114,31 +114,33 @@ function ChatHistory({ user, firestore, messages, setMessages, isPending }: Chat
   );
 }
 
-
 export function ChatInterface() {
   const { user } = useUser();
   const firestore = useFirestore();
   const [messages, setMessages] = useState<Message[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
   const [isPending, startTransition] = useTransition();
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    if (user && firestore) {
+      setIsReady(true);
+    }
+  }, [user, firestore]);
 
   const handleFormAction = async (formData: FormData) => {
     const userInput = formData.get('message') as string;
-    if (!userInput || !user || !firestore) return;
+    if (!userInput || !user || !firestore || !isReady) return;
 
     formRef.current?.reset();
     
-    const userMessage: Omit<Message, 'id'> = { role: 'user', content: userInput, timestamp: serverTimestamp() };
-    
-    // Optimistically update UI
     startTransition(async () => {
+      const userMessage: Omit<Message, 'id'> = { role: 'user', content: userInput, timestamp: serverTimestamp() };
       setMessages(prev => [...prev, { ...userMessage, id: Date.now().toString() }]);
 
-      // Save user message to Firestore
       const userMessageForDb = { ...userMessage, userId: user.uid };
       const userMessagePromise = addDoc(collection(firestore, 'chatMessages'), userMessageForDb);
 
-      // Get chat history from state, ensuring it's up-to-date
       const chatHistory = [...messages, { ...userMessage, id: 'temp-id' }]
         .slice(-10)
         .map(m => ({ role: m.role === 'bot' ? 'model' : 'user', content: m.content }));
@@ -148,28 +150,26 @@ export function ChatInterface() {
       if (result.response) {
         const botMessage: Omit<Message, 'id'> = { role: 'bot', content: result.response, timestamp: serverTimestamp() };
         setMessages(prev => [...prev, { ...botMessage, id: (Date.now() + 1).toString() }]);
-        const botMessageForDb = { content: result.response, role: 'model', userId: user.uid, timestamp: serverTimestamp() };
+        const botMessageForDb = { content: result.response, role: 'model' as const, userId: user.uid, timestamp: serverTimestamp() };
         await addDoc(collection(firestore, 'chatMessages'), botMessageForDb);
       } else if (result.error) {
         const errorMessage: Omit<Message, 'id'> = { role: 'bot', content: result.error, timestamp: serverTimestamp() };
         setMessages(prev => [...prev, { ...errorMessage, id: (Date.now() + 1).toString() }]);
       }
 
-      await userMessagePromise; // Ensure user message is saved
+      await userMessagePromise;
     });
   };
 
   const handleQuickMessage = (message: string) => {
     const formData = new FormData();
     formData.append('message', message);
-    startTransition(() => {
-      handleFormAction(formData);
-    });
+    handleFormAction(formData);
   };
 
   return (
     <div className="flex flex-col h-full">
-      {user && firestore ? (
+      {isReady && user && firestore ? (
         <ChatHistory 
           user={user} 
           firestore={firestore} 
@@ -180,14 +180,14 @@ export function ChatInterface() {
       ) : (
          <ScrollArea className="flex-grow p-4">
             <div className="flex justify-center items-center h-full">
-              <Loader2 className="h-8 w-8 animate-spin" />
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
          </ScrollArea>
       )}
       <div className='p-4 border-t'>
          <div className="flex gap-2 mb-2 flex-wrap">
               {quickMessages.map((qm) => (
-                  <Button key={qm} variant="outline" size="sm" onClick={() => handleQuickMessage(qm)} disabled={isPending}>
+                  <Button key={qm} variant="outline" size="sm" onClick={() => handleQuickMessage(qm)} disabled={isPending || !isReady}>
                       {qm}
                   </Button>
               ))}
@@ -197,8 +197,8 @@ export function ChatInterface() {
             action={handleFormAction}
             className="flex items-center gap-2"
         >
-          <Input name="message" placeholder="Type your message..." autoComplete="off" disabled={isPending} />
-          <Button type="submit" disabled={isPending}>
+          <Input name="message" placeholder="Type your message..." autoComplete="off" disabled={isPending || !isReady} />
+          <Button type="submit" disabled={isPending || !isReady}>
             <Send className="h-4 w-4" />
             <span className="sr-only">Send</span>
           </Button>
