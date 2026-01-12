@@ -10,14 +10,14 @@ import { cn } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 type Message = {
-  role: 'user' | 'ai';
+  role: 'user' | 'model';
   content: string;
 };
 
 export default function ChatbotPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
-      role: 'ai',
+      role: 'model',
       content: "Hi, I’m MindBloom 🌱\nYour confidential space to talk. How are you feeling today?"
     }
   ]);
@@ -47,24 +47,28 @@ export default function ChatbotPage() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input, history: messages.slice(-10) }),
+        body: JSON.stringify({ 
+            message: input, 
+            history: messages.map(m => ({role: m.role, content: m.content})) 
+        }),
       });
 
       if (!res.ok) {
-        throw new Error('Failed to get AI response.');
+        const errorData = await res.json();
+        throw new Error(errorData.reply || 'Failed to get AI response.');
       }
 
       const data = await res.json();
       
       if (data.reply) {
-        setMessages((prev) => [...prev, { role: 'ai', content: data.reply }]);
+        setMessages((prev) => [...prev, { role: 'model', content: data.reply }]);
       } else {
         throw new Error("AI response was empty.");
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      const errorMessage: Message = { role: 'ai', content: "I'm here. Please try again." };
+      const errorMessage: Message = { role: 'model', content: error.message || "I'm here. Please try again." };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
@@ -93,7 +97,7 @@ export default function ChatbotPage() {
               <div className="space-y-6">
                 {messages.map((message, index) => (
                   <div key={index} className={cn('flex items-start gap-3', message.role === 'user' ? 'justify-end' : 'justify-start')}>
-                    {message.role === 'ai' && (
+                    {message.role === 'model' && (
                       <Avatar className="w-8 h-8 bg-primary/20 text-primary">
                         <AvatarFallback><Bot size={20} /></AvatarFallback>
                       </Avatar>
