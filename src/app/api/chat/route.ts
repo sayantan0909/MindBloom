@@ -1,12 +1,21 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Ensure the API key is being read from environment variables
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+const genAI = new GoogleGenerativeAI(
+  process.env.GEMINI_API_KEY!
+);
 
 export async function POST(req: Request) {
   try {
-    const { message, history } = await req.json();
+    const body = await req.json();
+
+    const message =
+      body.message ||
+      body.messages?.[body.messages.length - 1]?.content;
+
+    if (!message) {
+      throw new Error("No message received");
+    }
 
     const model = genAI.getGenerativeModel({
       model: "gemini-1.5-flash",
@@ -49,11 +58,7 @@ If a message is unclear:
 `,
     });
 
-    const chat = model.startChat({
-        history: history || [],
-    });
-
-    const result = await chat.sendMessage(message);
+    const result = await model.generateContent(message);
     const reply = result.response.text();
 
     return NextResponse.json({ reply });
@@ -61,11 +66,8 @@ If a message is unclear:
     console.error("Gemini error:", error);
 
     // NEVER fail chatbot UX
-    return NextResponse.json(
-      {
-        reply: "I'm here with you. Please try again.",
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      reply: "I'm here with you. Please try again."
+    });
   }
 }
