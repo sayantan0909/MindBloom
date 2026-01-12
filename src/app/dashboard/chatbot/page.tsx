@@ -56,7 +56,8 @@ export default function ChatbotPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.reply || 'Failed to get AI response.');
+        // Use data.error from the server's JSON response
+        throw new Error(data.error || 'Failed to get AI response.');
       }
       
       if (data.reply) {
