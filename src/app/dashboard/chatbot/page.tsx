@@ -53,12 +53,11 @@ export default function ChatbotPage() {
         }),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.reply || 'Failed to get AI response.');
-      }
-
       const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.reply || 'Failed to get AI response.');
+      }
       
       if (data.reply) {
         setMessages((prev) => [...prev, { role: 'model', content: data.reply }]);
