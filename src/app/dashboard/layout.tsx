@@ -10,17 +10,20 @@ import {
   SidebarInset,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Bell, LogOut, MessageSquareWarning, Settings, User as UserIcon } from 'lucide-react';
+import { Bell, LogOut, MessageSquareWarning, Settings, User as UserIcon, Sparkles } from 'lucide-react';
 import { MindBloomLogo } from '@/components/icons';
 import { SidebarNav } from '@/components/sidebar-nav';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuPortal, DropdownMenuSubContent } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
 import { useAuth, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { logout } from '@/lib/auth';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { useMouseTrail } from '@/hooks/use-mouse-trail';
 
 export default function DashboardLayout({
   children,
@@ -30,6 +33,7 @@ export default function DashboardLayout({
   const { user, isUserLoading, userError } = useUser();
   const auth = useAuth();
   const router = useRouter();
+  const { isEnabled: isTrailEnabled, setIsEnabled: setTrailEnabled } = useMouseTrail();
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -131,10 +135,25 @@ export default function DashboardLayout({
                   <UserIcon className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
+                 <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                        <div className="flex items-center justify-between w-full">
+                           <Label htmlFor="mouse-trail" className="flex items-center gap-2 cursor-pointer">
+                            <Sparkles className="h-4 w-4" />
+                            Mouse Trail
+                           </Label>
+                          <Switch id="mouse-trail" checked={isTrailEnabled} onCheckedChange={setTrailEnabled}/>
+                        </div>
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
