@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MindBloomLogo } from '@/components/icons';
 import { useAuth } from '@/firebase';
-import { signInWithEmailAndPassword, signOut, sendEmailVerification } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -20,18 +20,23 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showResendVerification, setShowResendVerification] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState<string | null>(null);
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setShowResendVerification(false);
+    setVerificationMessage(null);
+
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       if (!userCredential.user.emailVerified) {
         await signOut(auth);
-        setError('Please verify your email before logging in. A new verification email has been sent.');
-        // Resend verification email
-        await sendEmailVerification(userCredential.user);
+        setError('Please verify your email before logging in.');
+        setShowResendVerification(true);
       } else {
         router.push('/dashboard');
       }
@@ -56,6 +61,25 @@ export default function LoginPage() {
     }
   };
 
+  const handleResendVerification = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        if (userCredential.user) {
+            await sendEmailVerification(userCredential.user);
+            await signOut(auth);
+            setVerificationMessage('A new verification email has been sent. Please check your inbox.');
+            setShowResendVerification(false);
+        }
+    } catch (err: any) {
+        setError('Failed to resend verification email. Please check your credentials and try again.');
+        console.error(err);
+    } finally {
+        setLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
       <div className="absolute inset-0 bg-grid bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
@@ -72,7 +96,20 @@ export default function LoginPage() {
             {error && (
               <Alert variant="destructive">
                 <AlertTitle>Login Failed</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription>
+                  {error}
+                  {showResendVerification && (
+                    <Button variant="link" className="p-0 h-auto ml-1 text-destructive-foreground underline" onClick={handleResendVerification}>
+                      Resend verification email
+                    </Button>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+             {verificationMessage && (
+              <Alert variant="default">
+                <AlertTitle>Email Sent</AlertTitle>
+                <AlertDescription>{verificationMessage}</AlertDescription>
               </Alert>
             )}
             <div className="space-y-2">
@@ -87,7 +124,15 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+                <div className="flex items-center">
+                    <Label htmlFor="password">Password</Label>
+                    <Link
+                        href="/forgot-password"
+                        className="ml-auto inline-block text-sm underline"
+                    >
+                        Forgot your password?
+                    </Link>
+                </div>
               <Input 
                 id="password" 
                 type="password" 
