@@ -179,7 +179,7 @@ service cloud.firestore {
      */
     match /chatMessages/{messageId} {
       allow get: if isExistingOwner(resource.data);
-      allow list: if isSignedIn() && request.query.where.userId == request.auth.uid;
+      allow list: if request.auth.uid == request.query.get('where_userId_eq');
       allow create: if isCreatingOwnedDoc();
       allow update: if isExistingOwner(resource.data) && isImmutable('userId');
       allow delete: if isExistingOwner(resource.data);
