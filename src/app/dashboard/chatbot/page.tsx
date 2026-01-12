@@ -26,27 +26,29 @@ export default function ChatbotPage() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!user || !firestore) return;
+    if (user && firestore) {
+      const messagesQuery = query(
+        collection(firestore, 'chatMessages'),
+        where('userId', '==', user.uid),
+        orderBy('timestamp', 'asc')
+      );
 
-    const messagesQuery = query(
-      collection(firestore, 'chatMessages'),
-      where('userId', '==', user.uid),
-      orderBy('timestamp', 'asc')
-    );
-
-    const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
-      const dbMessages: Message[] = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          role: data.role === 'model' || data.role === 'bot' ? 'ai' : 'user',
-          content: data.content,
-        };
+      const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+        const dbMessages = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            role: data.role === 'model' || data.role === 'bot' ? 'ai' : 'user',
+            content: data.content,
+          };
+        });
+        setMessages(dbMessages);
+      }, (error) => {
+        console.error("Firestore snapshot error:", error);
       });
-      setMessages(dbMessages);
-    });
 
-    return () => unsubscribe();
+      return () => unsubscribe();
+    }
   }, [user, firestore]);
 
   useEffect(() => {
@@ -63,26 +65,29 @@ export default function ChatbotPage() {
     if (!input.trim() || !user || !firestore) return;
 
     const userMessageContent = input;
+    const userMessageForUI: Message = { role: 'user', content: userMessageContent };
+    
     setInput('');
+    // Optimistically update UI
+    setMessages(prev => [...prev, userMessageForUI]);
+    
+    // Set loading state for AI response
     setIsLoading(true);
 
-    const userMessage: Omit<Message, 'id'> = { role: 'user', content: userMessageContent };
-    setMessages(prev => [...prev, userMessage]); // Optimistically update UI
-
-    await addDoc(collection(firestore, 'chatMessages'), {
-      role: 'user',
-      content: userMessageContent,
-      userId: user.uid,
-      timestamp: serverTimestamp(),
-    });
-
     try {
+        await addDoc(collection(firestore, 'chatMessages'), {
+            role: 'user',
+            content: userMessageContent,
+            userId: user.uid,
+            timestamp: serverTimestamp(),
+        });
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessageContent,
-          history: messages.slice(-10) // Send last 10 messages as history
+          history: messages.slice(-10).map(m => ({ role: m.role === 'ai' ? 'model' : 'user', content: m.content })) 
         }),
       });
 
@@ -91,19 +96,24 @@ export default function ChatbotPage() {
       }
 
       const data = await res.json();
+      
+      if (data.reply) {
+         await addDoc(collection(firestore, 'chatMessages'), {
+            role: 'model',
+            content: data.reply,
+            userId: user.uid,
+            timestamp: serverTimestamp(),
+        });
+      } else {
+        throw new Error("AI response was empty.");
+      }
 
-      await addDoc(collection(firestore, 'chatMessages'), {
-        role: 'model',
-        content: data.reply,
-        userId: user.uid,
-        timestamp: serverTimestamp(),
-      });
     } catch (error) {
       console.error(error);
-      const errorMessage = { role: 'ai' as const, content: 'Sorry, I had trouble responding. Please try again.' };
+      const errorMessageContent = 'Sorry, I had trouble responding. Please try again.';
        await addDoc(collection(firestore, 'chatMessages'), {
         role: 'model',
-        content: errorMessage.content,
+        content: errorMessageContent,
         userId: user.uid,
         timestamp: serverTimestamp(),
       });
@@ -170,7 +180,7 @@ export default function ChatbotPage() {
                   autoComplete="off"
                   disabled={isLoading || !user || !firestore}
                 />
-                <Button type="submit" disabled={isLoading || !user || !firestore}>
+                <Button type="submit" disabled={isLoading || !input.trim() || !user || !firestore}>
                   <Send className="h-4 w-4" />
                   <span className="sr-only">Send</span>
                 </Button>
