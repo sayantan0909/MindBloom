@@ -4,32 +4,40 @@ import { useState } from 'react';
 import { mentalHealthData, ScreeningTool } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ScreeningQuestionnaire } from './screening-questionnaire';
+import { ScreeningQuestionnaire, ResultsDisplay } from './screening-questionnaire';
 
 type TestType = 'phq9' | 'gad7';
 
 export function ScreeningTest() {
   const [currentTest, setCurrentTest] = useState<TestType | null>(null);
   const [testData, setTestData] = useState<ScreeningTool | null>(null);
-  const [isCompleted, setIsCompleted] = useState(false);
+  const [score, setScore] = useState<number | null>(null);
+  const [result, setResult] = useState<string | null>(null);
 
   const startTest = (type: TestType) => {
     setCurrentTest(type);
     setTestData(mentalHealthData[type]);
-    setIsCompleted(false);
+    setScore(null);
+    setResult(null);
   };
   
   const resetTest = () => {
     setCurrentTest(null);
     setTestData(null);
-    setIsCompleted(false);
+    setScore(null);
+    setResult(null);
   };
 
-  const handleComplete = () => {
-    setIsCompleted(true);
+  const handleComplete = (completedScore: number, completedResult: string) => {
+    setScore(completedScore);
+    setResult(completedResult);
   }
 
-  if (currentTest && testData && !isCompleted) {
+  if (score !== null && result !== null && testData) {
+    return <ResultsDisplay score={score} result={result} testData={testData} onReset={resetTest} />;
+  }
+
+  if (currentTest && testData) {
     return <ScreeningQuestionnaire testData={testData} onComplete={handleComplete} onBack={resetTest} />;
   }
 

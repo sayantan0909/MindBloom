@@ -8,13 +8,18 @@ export type ScreeningResponse = {
   text: string;
 };
 
+type ScoringInterpretation = {
+    interpretation: string;
+    description: string;
+}
+
 export type ScreeningTool = {
   name: string;
   purpose: string;
   timeframe: string;
   questions: ScreeningQuestion[];
   responses: ScreeningResponse[];
-  scoring: { [range: string]: string };
+  scoring: { [range: string]: ScoringInterpretation };
 };
 
 export type Counselor = {
@@ -63,11 +68,11 @@ export const mentalHealthData = {
       { value: 3, text: "Nearly every day" },
     ],
     scoring: {
-      "0-4": "Minimal depression",
-      "5-9": "Mild depression",
-      "10-14": "Moderate depression",
-      "15-19": "Moderately severe depression",
-      "20-27": "Severe depression",
+      "0-4": { interpretation: "Minimal depression", description: "Your responses suggest you have minimal or no symptoms of depression. This is great news! Maintaining a healthy lifestyle with good sleep, nutrition, and social connections can help you continue to feel well."},
+      "5-9": { interpretation: "Mild depression", description: "Your score suggests you may be experiencing mild symptoms of depression. It's a good idea to monitor your mood and prioritize self-care activities like exercise, mindfulness, or talking with trusted friends or family."},
+      "10-14": { interpretation: "Moderate depression", description: "Your responses indicate moderate depressive symptoms. It may be beneficial to consider talking to a counselor or mental health professional to discuss how you're feeling and explore support options."},
+      "15-19": { interpretation: "Moderately severe depression", description: "This score suggests you are likely experiencing significant depressive symptoms. We strongly recommend scheduling an appointment with a counselor or doctor to discuss your mental health."},
+      "20-27": { interpretation: "Severe depression", description: "Your score indicates severe symptoms of depression. It is very important to seek professional support. Please book an appointment with a counselor or a doctor as soon as possible."},
     },
   } as ScreeningTool,
   gad7: {
@@ -90,10 +95,10 @@ export const mentalHealthData = {
       { value: 3, text: "Nearly every day" },
     ],
     scoring: {
-      "0-4": "Minimal anxiety",
-      "5-9": "Mild anxiety",
-      "10-14": "Moderate anxiety",
-      "15-21": "Severe anxiety",
+      "0-4": { interpretation: "Minimal anxiety", description: "Your responses suggest your anxiety symptoms are minimal. Keep up with your current strategies for managing stress."},
+      "5-9": { interpretation: "Mild anxiety", description: "Your score suggests you may be experiencing mild symptoms of anxiety. Self-help resources and stress-management techniques, like those in our Resource Hub, may be helpful."},
+      "10-14": { interpretation: "Moderate anxiety", description: "Your responses indicate moderate anxiety symptoms. This can be challenging to manage on your own. We recommend you consider talking to a professional to learn coping strategies."},
+      "15-21": { interpretation: "Severe anxiety", description: "This score suggests severe anxiety, which can significantly impact your daily life. It is highly recommended that you seek professional help. Please consider booking an appointment with a counselor."},
     },
   } as ScreeningTool,
   counselors: [

@@ -6,21 +6,21 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, RefreshCw, ChevronRight } from 'lucide-react';
+import { ArrowLeft, RefreshCw, ChevronRight, BookOpen, CalendarCheck } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { AnimatePresence, motion } from 'framer-motion';
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 interface ScreeningQuestionnaireProps {
   testData: ScreeningTool;
-  onComplete: () => void;
+  onComplete: (score: number, result: string) => void;
   onBack: () => void;
 }
 
 export function ScreeningQuestionnaire({ testData, onComplete, onBack }: ScreeningQuestionnaireProps) {
   const [answers, setAnswers] = useState<{ [key: number]: number }>({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [score, setScore] = useState<number | null>(null);
-  const [result, setResult] = useState<string | null>(null);
 
   const totalQuestions = testData.questions.length;
   const currentQuestion = testData.questions[currentQuestionIndex];
@@ -45,60 +45,12 @@ export function ScreeningQuestionnaire({ testData, onComplete, onBack }: Screeni
     for (const range in testData.scoring) {
       const [min, max] = range.split('-').map(num => parseInt(num));
       if (totalScore >= min && totalScore <= max) {
-        interpretation = testData.scoring[range];
+        interpretation = testData.scoring[range].interpretation;
         break;
       }
     }
-    setScore(totalScore);
-    setResult(interpretation);
-    onComplete();
+    onComplete(totalScore, interpretation);
   };
-
-  const resetTest = () => {
-    setCurrentQuestionIndex(0);
-    setAnswers({});
-    setScore(null);
-    setResult(null);
-  }
-
-  if (score !== null && result) {
-    const maxScore = totalQuestions * (testData.responses.length - 1);
-    const severity = result.split(' ')[0].toLowerCase();
-    
-    let scoreColor = "text-green-600";
-    if (severity.includes("mild")) scoreColor = "text-yellow-600";
-    if (severity.includes("moderate")) scoreColor = "text-orange-600";
-    if (severity.includes("severe")) scoreColor = "text-red-600";
-
-    return (
-        <Card className="max-w-2xl mx-auto shadow-2xl">
-            <CardHeader className="text-center">
-                <CardTitle className="text-2xl font-headline">Screening Results</CardTitle>
-                <CardDescription>{testData.name}</CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-                <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, type: 'spring', stiffness: 100 }}>
-                    <p className="text-muted-foreground">Your Score</p>
-                    <p className={`text-7xl font-bold ${scoreColor}`}>{score}</p>
-                    <p className="text-xl font-semibold mt-2">{result}</p>
-                    <Progress value={(score / maxScore) * 100} className="mt-4" />
-                </motion.div>
-                <div className="text-left mt-6 bg-secondary/50 p-4 rounded-lg">
-                    <h4 className="font-semibold mb-2">What this might mean:</h4>
-                    <p className="text-muted-foreground">This screening suggests you may be experiencing <strong>{result.toLowerCase()}</strong> symptoms. This is not a diagnosis. For a formal diagnosis and treatment options, please consult a healthcare professional.</p>
-                    {score >= 10 && (
-                        <p className="font-semibold text-primary mt-3">We recommend speaking with a mental health professional to discuss your results.</p>
-                    )}
-                </div>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-2">
-                <Button onClick={onBack} className="w-full">
-                    <RefreshCw className="mr-2 h-4 w-4" /> Take Another Screening
-                </Button>
-            </CardFooter>
-        </Card>
-    );
-  }
 
 
   return (
@@ -153,4 +105,74 @@ export function ScreeningQuestionnaire({ testData, onComplete, onBack }: Screeni
       </CardFooter>
     </Card>
   );
+}
+
+interface ResultsDisplayProps {
+    score: number;
+    result: string;
+    testData: ScreeningTool;
+    onReset: () => void;
+}
+
+export function ResultsDisplay({ score, result, testData, onReset }: ResultsDisplayProps) {
+    const maxScore = testData.questions.length * (testData.responses.length - 1);
+    
+    let scoreColor = "text-green-600";
+    let bgColor = "bg-green-100/50";
+    if (result.toLowerCase().includes("mild")) {
+        scoreColor = "text-yellow-600";
+        bgColor = "bg-yellow-100/50";
+    }
+    if (result.toLowerCase().includes("moderate")) {
+        scoreColor = "text-orange-600";
+        bgColor = "bg-orange-100/50";
+    }
+    if (result.toLowerCase().includes("severe")) {
+        scoreColor = "text-red-600";
+        bgColor = "bg-red-100/50";
+    }
+
+    const description = testData.scoring[Object.keys(testData.scoring).find(range => {
+        const [min, max] = range.split('-').map(Number);
+        return score >= min && score <= max;
+    }) || "0-0"]?.description || "No description available.";
+
+
+    return (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <Card className="max-w-2xl mx-auto shadow-2xl">
+                <CardHeader className="text-center">
+                    <CardTitle className="text-2xl font-headline">Screening Results</CardTitle>
+                    <CardDescription>{testData.name}</CardDescription>
+                </CardHeader>
+                <CardContent className={cn("text-center p-6 rounded-lg m-6", bgColor)}>
+                    <p className="text-muted-foreground">Your Score</p>
+                    <p className={`text-7xl font-bold ${scoreColor}`}>{score}</p>
+                    <p className="text-xl font-semibold mt-2">{result}</p>
+                    <Progress value={(score / maxScore) * 100} className="mt-4" />
+                </CardContent>
+                <CardContent>
+                    <div className="text-left mt-0 bg-secondary/50 p-4 rounded-lg">
+                        <h4 className="font-semibold mb-2">What this might mean:</h4>
+                        <p className="text-muted-foreground">{description}</p>
+                    </div>
+                </CardContent>
+                <CardFooter className="flex-col sm:flex-row gap-2">
+                    <Button asChild className="w-full sm:w-auto flex-1">
+                        <Link href="/dashboard/booking">
+                            <CalendarCheck className="mr-2 h-4 w-4" /> Book Counselor
+                        </Link>
+                    </Button>
+                    <Button asChild variant="secondary" className="w-full sm:w-auto flex-1">
+                        <Link href="/dashboard/resources">
+                            <BookOpen className="mr-2 h-4 w-4" /> View Resources
+                        </Link>
+                    </Button>
+                     <Button onClick={onReset} variant="outline" className="w-full sm:w-auto flex-1">
+                        <RefreshCw className="mr-2 h-4 w-4" /> Take Another Test
+                    </Button>
+                </CardFooter>
+            </Card>
+        </motion.div>
+    );
 }
