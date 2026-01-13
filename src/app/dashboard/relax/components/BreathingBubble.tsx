@@ -26,11 +26,13 @@ const bubbleSize = {
 };
 
 const SESSION_DURATION = 2 * 60 * 1000; // 2 minutes in milliseconds
+const finalSize = 320;
 
 export function BreathingBubble() {
   const [cycleIndex, setCycleIndex] = useState(0);
   const [isSessionActive, setIsSessionActive] = useState(true);
   const [count, setCount] = useState(1);
+  const [completed, setCompleted] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [soundOn, setSoundOn] = useState(false);
@@ -65,14 +67,14 @@ export function BreathingBubble() {
   const phase: Phase = currentPhase.phase;
 
   useEffect(() => {
-    if (!isSessionActive) return;
+    if (!isSessionActive || completed) return;
 
     const cycleTimer = setTimeout(() => {
       setCycleIndex((prevIndex) => (prevIndex + 1) % breathingCycle.length);
     }, breathingCycle[cycleIndex].duration);
 
     return () => clearTimeout(cycleTimer);
-  }, [cycleIndex, isSessionActive]);
+  }, [cycleIndex, isSessionActive, completed]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -86,6 +88,7 @@ export function BreathingBubble() {
     if (!isSessionActive) return;
     const sessionTimer = setTimeout(() => {
       setIsSessionActive(false);
+      setCompleted(true);
     }, SESSION_DURATION);
 
     return () => clearTimeout(sessionTimer);
@@ -94,6 +97,7 @@ export function BreathingBubble() {
   const handleRestart = () => {
     setCycleIndex(0);
     setIsSessionActive(true);
+    setCompleted(false);
   };
   
   const arrow = phase === 'inhale' ? '↑'
@@ -101,55 +105,59 @@ export function BreathingBubble() {
             : '•';
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-[60vh] bg-background">
+    <div className="relative flex flex-col items-center justify-center h-[60vh] bg-background overflow-hidden">
+        <div
+            className={`absolute inset-0 transition-colors duration-[4000ms] ${
+                completed ? 'bg-emerald-50' : 'bg-background'
+            }`}
+        />
       <FloatingSoundControl soundOn={soundOn} toggle={toggleSound} />
-      <AnimatePresence mode="wait">
-        {isSessionActive ? (
-          <motion.div
-            key="bubble"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="flex flex-col items-center justify-center"
-          >
+        <div className="relative flex flex-col items-center justify-center">
             <div className="w-[420px] h-[420px] flex items-center justify-center relative">
                 <div
-                    className={`relative rounded-full transition-all duration-[4000ms] ease-in-out
-              bg-gradient-to-br ${phaseStyles[phase]} ${phase !== 'hold' ? 'animate-[float_6s_ease-in-out_infinite]' : ''}`}
+                    className={`relative rounded-full transition-all duration-[3000ms] ease-out
+                        ${!completed ? `bg-gradient-to-br ${phaseStyles[phase]}` : 'bg-gradient-to-br from-emerald-300 to-teal-200'}
+                        ${!completed && phase !== 'hold' ? 'animate-[float_6s_ease-in-out_infinite]' : ''}
+                        ${completed ? 'shadow-[0_0_120px_rgba(120,255,200,0.7)]' : 'shadow-lg'}
+                    `}
                     style={{
-                        width: bubbleSize[phase],
-                        height: bubbleSize[phase],
-                        boxShadow: '0 0 60px rgba(100, 200, 200, 0.4)',
+                        width: completed ? finalSize : bubbleSize[phase],
+                        height: completed ? finalSize : bubbleSize[phase],
                     }}
                 >
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <div className="text-6xl text-white/90">{arrow}</div>
-                        <div className="text-5xl font-light text-white/90 mt-2">{count}</div>
-                    </div>
+                    {!completed && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <div className="text-6xl text-white/90">{arrow}</div>
+                            <div className="text-5xl font-light text-white/90 mt-2">{count}</div>
+                        </div>
+                    )}
                 </div>
             </div>
-            <p className="mt-6 text-lg text-muted-foreground">
-                {phase === 'inhale' && 'Breathe in'}
-                {phase === 'hold' && 'Hold'}
-                {phase === 'exhale' && 'Breathe out'}
-            </p>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="completion"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="text-center"
-          >
-            <p className="text-2xl font-semibold text-foreground mb-6">
-              Breathing consistency improved.
-            </p>
-            <Button onClick={handleRestart}>Restart Session</Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
+            {!completed ? (
+                <p className="mt-6 text-lg text-muted-foreground z-10">
+                    {phase === 'inhale' && 'Breathe in'}
+                    {phase === 'hold' && 'Hold'}
+                    {phase === 'exhale' && 'Breathe out'}
+                </p>
+            ) : (
+                <div className="mt-8 text-center animate-fade-in z-10">
+                    <p className="text-xl font-medium text-emerald-700">
+                        Breathing session complete
+                    </p>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                        Your body is now in a calmer state
+                    </p>
+                    <button
+                        onClick={handleRestart}
+                        className="mt-6 rounded-full px-6 py-2 bg-emerald-600 text-white
+                                hover:bg-emerald-500 transition"
+                    >
+                        Restart breathing
+                    </button>
+                </div>
+            )}
+        </div>
     </div>
   );
 }
