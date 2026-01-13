@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { SoundToggle } from './SoundToggle';
 
 const steps = [
   { text: 'Get comfortable in your seat.', duration: 4000 },
@@ -14,6 +15,9 @@ const steps = [
   { text: 'Finally, just sit for a moment and enjoy the feeling of relaxation.', duration: 8000 },
   { text: 'Exercise complete. You can return or restart.', duration: Infinity },
 ];
+
+const AMBIENT_SOUND_SRC = 'https://storage.googleapis.com/sound-effects-library/calm-river-ambience-loop-1-182375.mp3';
+
 
 export function MuscleRelease() {
   const [currentStep, setCurrentStep] = useState(0);
@@ -29,7 +33,8 @@ export function MuscleRelease() {
   }, [currentStep]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-[60vh] bg-background text-center p-4">
+    <div className="relative flex flex-col items-center justify-center h-[60vh] bg-background text-center p-4">
+      <SoundToggle soundSrc={AMBIENT_SOUND_SRC} />
       <AnimatePresence mode="wait">
         <motion.p
           key={currentStep}

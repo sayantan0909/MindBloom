@@ -1,10 +1,14 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { SoundToggle } from './SoundToggle';
+
+const AMBIENT_SOUND_SRC = 'https://storage.googleapis.com/sound-effects-library/calm-and-peaceful-ambient-music-60-second-version-183030.mp3';
 
 export function DotFocus() {
   return (
     <div className="relative flex flex-col items-center justify-center w-full h-[60vh] bg-background overflow-hidden">
+        <SoundToggle soundSrc={AMBIENT_SOUND_SRC} />
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Wind, Hand, Eye, Zap } from 'lucide-react';
 import { StressGameCard } from '../components/StressGameCard';
@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 type ActiveGame = 'breathing' | 'muscle' | 'focus' | null;
 
-export default function RelaxPage() {
+function RelaxContent() {
   const [activeGame, setActiveGame] = useState<ActiveGame>(null);
   const searchParams = useSearchParams();
 
@@ -98,4 +98,13 @@ export default function RelaxPage() {
   }
 
   return <AnimatePresence mode="wait">{renderContent()}</AnimatePresence>;
+}
+
+
+export default function RelaxPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <RelaxContent />
+        </Suspense>
+    )
 }

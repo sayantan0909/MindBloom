@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { SoundToggle } from './SoundToggle';
 
 // Define the phases of the breathing cycle
 const breathingCycle = [
@@ -12,6 +13,8 @@ const breathingCycle = [
 ];
 
 const SESSION_DURATION = 2 * 60 * 1000; // 2 minutes in milliseconds
+const AMBIENT_SOUND_SRC = 'https://storage.googleapis.com/sound-effects-library/breathing-deep-and-calm-102981.mp3';
+
 
 export function BreathingBubble() {
   const [phaseIndex, setPhaseIndex] = useState(0);
@@ -47,7 +50,8 @@ export function BreathingBubble() {
   const currentPhase = breathingCycle[phaseIndex];
 
   return (
-    <div className="flex flex-col items-center justify-center h-[60vh] bg-background">
+    <div className="relative flex flex-col items-center justify-center h-[60vh] bg-background">
+      <SoundToggle soundSrc={AMBIENT_SOUND_SRC} />
       <AnimatePresence mode="wait">
         {isSessionActive ? (
           <motion.div
