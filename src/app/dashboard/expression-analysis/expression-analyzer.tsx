@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, Video, AlertTriangle, CheckCircle, ShieldCheck } from 'lucide-react';
-import { FaceMesh, FACEMESH_TESSELATION } from '@mediapipe/face_mesh';
-import * as CameraUtils from '@mediapipe/camera_utils';
+import { FaceMesh } from '@mediapipe/face_mesh';
+import '@mediapipe/camera_utils';
 
 type Status = 'idle' | 'requesting' | 'ready' | 'analyzing' | 'success' | 'error';
 type StressLevel = 'Low' | 'Moderate' | 'High';
@@ -121,8 +121,8 @@ export function ExpressionAnalyzer() {
     const scores = { facial: [] as number[], audio: [] as number[] };
 
     // --- Face Analysis Setup ---
-    const faceMesh = new FaceMesh({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+    const faceMesh = new (window as any).FaceMesh({
+      locateFile: (file: any) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
     });
     faceMesh.setOptions({
       maxNumFaces: 1,
@@ -130,7 +130,7 @@ export function ExpressionAnalyzer() {
       minDetectionConfidence: 0.5,
       minTrackingConfidence: 0.5,
     });
-    faceMesh.onResults((results) => {
+    faceMesh.onResults((results: any) => {
       if (results.multiFaceLandmarks && results.multiFaceLandmarks[0]) {
         const facialScore = analyzeFacialCues(results.multiFaceLandmarks[0]);
         scores.facial.push(facialScore);
@@ -158,7 +158,7 @@ export function ExpressionAnalyzer() {
     };
 
     // --- Connect Camera to FaceMesh ---
-    const camera = new CameraUtils.Camera(videoRef.current, {
+    const camera = new (window as any).Camera(videoRef.current, {
       onFrame: async () => {
         if (videoRef.current) {
           await faceMesh.send({ image: videoRef.current });
