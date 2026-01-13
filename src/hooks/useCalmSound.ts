@@ -7,29 +7,34 @@ export function useCalmSound(soundSrc: string) {
   const [isSoundOn, setIsSoundOn] = useState(false);
 
   useEffect(() => {
-    // Initialize Audio element on mount
-    audioRef.current = new Audio(soundSrc);
-    audioRef.current.loop = true;
-    audioRef.current.volume = 0.3;
-
-    // Cleanup on unmount
+    // This effect now only handles cleanup on unmount
+    const audio = audioRef.current;
     return () => {
-      audioRef.current?.pause();
-      audioRef.current = null;
+      audio?.pause();
     };
-  }, [soundSrc]);
+  }, []);
 
-  useEffect(() => {
-    // Play or pause when isSoundOn changes
-    if (isSoundOn) {
-      audioRef.current?.play().catch(error => console.error("Audio play failed:", error));
-    } else {
-      audioRef.current?.pause();
+  const toggleSound = async () => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio(soundSrc);
+      audioRef.current.loop = true;
+      audioRef.current.volume = 0.3;
     }
-  }, [isSoundOn]);
 
-  const toggleSound = () => {
-    setIsSoundOn(prev => !prev);
+    const audio = audioRef.current;
+
+    try {
+      if (isSoundOn) {
+        audio.pause();
+      } else {
+        await audio.play();
+      }
+      setIsSoundOn(prev => !prev);
+    } catch (err) {
+      console.error('Audio play failed:', err);
+      // If play fails, ensure state is set to off
+      setIsSoundOn(false);
+    }
   };
 
   return { isSoundOn, toggleSound };
