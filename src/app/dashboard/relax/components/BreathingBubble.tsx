@@ -140,6 +140,33 @@ export function BreathingBubble() {
   
   return (
     <div className="relative flex flex-col items-center justify-center h-[60vh] bg-background overflow-hidden">
+        <button
+          onClick={() => {
+            if (!('speechSynthesis' in window)) {
+              alert('Speech API not supported');
+              return;
+            }
+
+            const u = new SpeechSynthesisUtterance('This is a voice test');
+            u.rate = 1;
+            u.pitch = 1;
+            u.volume = 1;
+
+            window.speechSynthesis.speak(u);
+            console.log('Speech triggered');
+          }}
+          style={{
+            position: 'fixed',
+            top: 20,
+            left: 20,
+            zIndex: 9999,
+            padding: '10px',
+            background: 'black',
+            color: 'white',
+          }}
+        >
+          TEST VOICE
+        </button>
         <div
             className={`absolute inset-0 transition-colors duration-[4000ms] ${
                 completed ? 'bg-emerald-50' : 'bg-background'
