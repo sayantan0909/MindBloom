@@ -43,7 +43,7 @@ export default function RelaxPage() {
         <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
           <Zap className="h-10 w-10 text-primary" />
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold font-headline">Relax & Reset</h1>
+        <h1 className="text-3xl md:text-4xl font-bold font-headline">Relax &amp; Reset</h1>
         <p className="text-muted-foreground mt-2 text-lg max-w-3xl mx-auto">
           Take a moment to unwind with these short, guided exercises designed to calm your mind and release tension.
         </p>
