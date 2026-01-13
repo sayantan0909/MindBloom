@@ -4,54 +4,65 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Video, AlertTriangle, CheckCircle, ShieldCheck } from 'lucide-react';
-import type { FaceMesh } from '@mediapipe/face_mesh';
+import { Loader2, AlertTriangle, CheckCircle, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+// Dynamically import FaceMesh
+let FaceMesh: any;
+
+// Type definitions
 type Phase = 'idle' | 'requesting' | 'ready' | 'baseline' | 'analyzing' | 'success' | 'error';
 type StressLevel = 'Low' | 'Moderate' | 'High';
 
-// Helper function to calculate distance between two points
+// --- Helper Functions ---
 const p = (p1: { x: number; y: number }, p2: { x: number; y: number }) => Math.hypot(p1.x - p2.x, p1.y - p2.y);
-// Helper function to average an array of numbers
 const avg = (arr: number[]) => arr.length ? arr.reduce((a, b) => a + b) / arr.length : 0;
-// Clamp a value between a min and max
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(value, max));
 
-
-/**
- * Detailed analysis logic based on facial landmarks.
- */
 function analyzeFacialCues(landmarks: any[]) {
-    // 1. Eye Aspect Ratio (EAR) for blink detection
-    const earLeft = p(landmarks[386], landmarks[374]) / p(landmarks[362], landmarks[263]);
-    const earRight = p(landmarks[159], landmarks[145]) / p(landmarks[33], landmarks[133]);
-    const avgEar = (earLeft + earRight) / 2.0;
+  const earLeft = p(landmarks[386], landmarks[374]) / p(landmarks[362], landmarks[263]);
+  const earRight = p(landmarks[159], landmarks[145]) / p(landmarks[33], landmarks[133]);
+  const avgEar = (earLeft + earRight) / 2.0;
 
-    // 2. Brow-to-Eye distance for tension
-    const browTensionLeft = Math.abs(landmarks[70].y - landmarks[159].y);
-    const browTensionRight = Math.abs(landmarks[300].y - landmarks[386].y);
-    const avgBrowTension = (browTensionLeft + browTensionRight) / 2.0;
+  const browTensionLeft = Math.abs(landmarks[70].y - landmarks[159].y);
+  const browTensionRight = Math.abs(landmarks[300].y - landmarks[386].y);
+  const avgBrowTension = (browTensionLeft + browTensionRight) / 2.0;
 
-    // 3. Mouth opening for jaw clenching
-    const jawOpenness = p(landmarks[13], landmarks[14]);
+  const jawOpenness = p(landmarks[13], landmarks[14]);
 
-    return { ear: avgEar, brow: avgBrowTension, jaw: jawOpenness, head: landmarks[1] };
+  return { ear: avgEar, brow: avgBrowTension, jaw: jawOpenness, head: landmarks[1] };
 }
-
 
 export function ExpressionAnalyzer() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [result, setResult] = useState<StressLevel | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [baselineLocked, setBaselineLocked] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
-  const faceMeshRef = useRef<FaceMesh | null>(null);
+  const faceMeshRef = useRef<any | null>(null);
   const animationFrameId = useRef<number | null>(null);
   const analysisTimers = useRef<NodeJS.Timeout[]>([]);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Dynamically import the FaceMesh module on component mount
+    (async () => {
+      try {
+        const module = await import('@mediapipe/face_mesh');
+        FaceMesh = module.FaceMesh;
+      } catch (e) {
+        console.error("Failed to load MediaPipe FaceMesh module", e);
+        setError("Failed to load analysis library. Please check your network connection and try again.");
+        setPhase('error');
+      }
+    })();
+
+    // Cleanup on unmount
+    return () => {
+        stopMediaAndAnalysis();
+    }
+  }, []);
 
   const stopMediaAndAnalysis = useCallback(() => {
     if (animationFrameId.current) {
@@ -74,7 +85,6 @@ export function ExpressionAnalyzer() {
       faceMeshRef.current.close();
       faceMeshRef.current = null;
     }
-    setBaselineLocked(false);
   }, []);
 
   const requestPermissions = async () => {
@@ -84,15 +94,11 @@ export function ExpressionAnalyzer() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
         mediaStreamRef.current = stream;
-        
-        console.log('Stream:', mediaStreamRef.current);
-        console.log('Video:', videoRef.current);
 
         const video = videoRef.current;
         if (!video) {
-            console.error('Video element not found.');
+            setError('Video element not found.');
             setPhase('error');
-            setError('An unexpected error occurred. Please refresh the page.');
             return;
         }
 
@@ -115,7 +121,7 @@ export function ExpressionAnalyzer() {
   };
 
   const startAnalysis = useCallback(() => {
-    if (!videoRef.current || !(window as any).FaceMesh) {
+    if (!videoRef.current || !FaceMesh) {
       setError("Analysis library not loaded. Please refresh and try again.");
       setPhase('error');
       return;
@@ -126,10 +132,11 @@ export function ExpressionAnalyzer() {
 
     let baseline = { ear: 0, brow: 0, jaw: 0, head: { x: 0, y: 0, z: 0 } };
     let baselineSamples = { ear: [] as number[], brow: [] as number[], jaw: [] as number[], headX: [] as number[], headY: [] as number[] };
-    let lastHeadPos = { x: 0, y: 0, z: 0 };
+    let baselineLocked = false;
+    
     let scoresBuffer: number[] = [];
     
-    const faceMesh = new (window as any).FaceMesh({
+    const faceMesh = new FaceMesh({
       locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
     });
     faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
@@ -140,18 +147,7 @@ export function ExpressionAnalyzer() {
         const landmarks = results.multiFaceLandmarks[0];
         const currentMetrics = analyzeFacialCues(landmarks);
         
-        console.log({
-          phase,
-          eye: currentMetrics.ear.toFixed(4),
-          brow: currentMetrics.brow.toFixed(4),
-          jaw: currentMetrics.jaw.toFixed(4),
-          head: currentMetrics.head.x.toFixed(4),
-        });
-
         if (phase === 'baseline') {
-            if (baselineSamples.ear.length === 0) {
-                lastHeadPos = { x: currentMetrics.head.x, y: currentMetrics.head.y, z: currentMetrics.head.z };
-            }
             baselineSamples.ear.push(currentMetrics.ear);
             baselineSamples.brow.push(currentMetrics.brow);
             baselineSamples.jaw.push(currentMetrics.jaw);
@@ -168,32 +164,27 @@ export function ExpressionAnalyzer() {
                     jaw: avg(baselineSamples.jaw),
                     head: { x: avg(baselineSamples.headX), y: avg(baselineSamples.headY), z: 0 }
                 };
-                setBaselineLocked(true);
+                baselineLocked = true;
             }
             
-            const eyeDelta = Math.abs(currentMetrics.ear - baseline.ear) / baseline.ear;
-            const browDelta = Math.abs(currentMetrics.brow - baseline.brow) / baseline.brow;
-            const jawDelta = Math.abs(currentMetrics.jaw - baseline.jaw) / baseline.jaw;
-            const headDelta = Math.hypot(currentMetrics.head.x - lastHeadPos.x, currentMetrics.head.y - lastHeadPos.y);
+            const eyeDelta = baseline.ear > 0.01 ? Math.abs(currentMetrics.ear - baseline.ear) / baseline.ear : 0;
+            const browDelta = baseline.brow > 0.01 ? Math.abs(currentMetrics.brow - baseline.brow) / baseline.brow : 0;
+            const jawDelta = baseline.jaw > 0.01 ? Math.abs(currentMetrics.jaw - baseline.jaw) / baseline.jaw : 0;
+            const headDelta = Math.hypot(currentMetrics.head.x - baseline.head.x, currentMetrics.head.y - baseline.head.y);
 
-            const eyeScore  = Math.min(eyeDelta  * 3.5, 1);
-            const browScore = Math.min(browDelta * 3.0, 1);
-            const jawScore  = Math.min(jawDelta  * 2.5, 1);
-            const headScore = Math.min(headDelta * 2.0, 1);
+            const eyeScore  = Math.min(eyeDelta  * 1.8, 1);
+            const browScore = Math.min(browDelta * 1.4, 1);
+            const jawScore  = Math.min(jawDelta  * 1.2, 1);
+            const headScore = Math.min(headDelta * 1.0, 1);
 
-            let stressScore =
-              0.4 * eyeScore +
-              0.3 * browScore +
-              0.2 * jawScore +
-              0.1 * headScore;
+            let stressScore = eyeScore + browScore + jawScore + headScore;
 
-            if (eyeDelta > 0.25 && (browDelta > 0.2 || jawDelta > 0.2)) {
+            if (eyeDelta > 0.3) {
                 stressScore += 0.25;
             }
 
-            scoresBuffer.push(clamp(stressScore, 0, 1));
-            if (scoresBuffer.length > 5) scoresBuffer.shift(); 
-            lastHeadPos = { x: currentMetrics.head.x, y: currentMetrics.head.y, z: currentMetrics.head.z };
+            scoresBuffer.push(clamp(stressScore, 0, 2)); // Clamp to a reasonable max
+            if (scoresBuffer.length > 6) scoresBuffer.shift(); 
         }
     });
     faceMeshRef.current = faceMesh;
@@ -214,9 +205,10 @@ export function ExpressionAnalyzer() {
         const analysisTimer = setTimeout(() => {
             const finalScore = avg(scoresBuffer);
 
-            let finalResult: StressLevel = 'Low';
-            if (finalScore > 0.60) finalResult = 'High';
-            else if (finalScore > 0.30) finalResult = 'Moderate';
+            let finalResult: StressLevel;
+            if (finalScore < 0.25) finalResult = 'Low';
+            else if (finalScore < 0.55) finalResult = 'Moderate';
+            else finalResult = 'High';
 
             setResult(finalResult);
             setPhase('success');
@@ -228,14 +220,8 @@ export function ExpressionAnalyzer() {
     }, 3000); // 3-second baseline period
     analysisTimers.current.push(baselineTimer);
 
-  }, [stopMediaAndAnalysis, phase, toast, baselineLocked]);
+  }, [stopMediaAndAnalysis, phase, toast]);
 
-  useEffect(() => {
-    return () => {
-        stopMediaAndAnalysis();
-    }
-  }, [stopMediaAndAnalysis]);
-  
   const renderContent = () => {
     switch (phase) {
       case 'idle':
