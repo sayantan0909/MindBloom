@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { SoundToggle } from './SoundToggle';
+import { useCalmSound } from '@/hooks/useCalmSound';
+import { Volume2, VolumeX } from 'lucide-react';
 
 const steps = [
   { text: 'Get comfortable in your seat.', duration: 4000 },
@@ -16,11 +17,11 @@ const steps = [
   { text: 'Exercise complete. You can return or restart.', duration: Infinity },
 ];
 
-const AMBIENT_SOUND_SRC = 'https://storage.googleapis.com/sound-effects-library/calm-river-ambience-loop-1-182375.mp3';
-
+const AMBIENT_SOUND_SRC = '/sounds/calm-river-ambience-loop-1-182375.mp3';
 
 export function MuscleRelease() {
   const [currentStep, setCurrentStep] = useState(0);
+  const { isSoundOn, toggleSound } = useCalmSound(AMBIENT_SOUND_SRC);
 
   useEffect(() => {
     if (currentStep < steps.length - 1) {
@@ -34,7 +35,15 @@ export function MuscleRelease() {
 
   return (
     <div className="relative flex flex-col items-center justify-center h-[60vh] bg-background text-center p-4">
-      <SoundToggle soundSrc={AMBIENT_SOUND_SRC} />
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggleSound}
+        className="absolute top-0 right-0 z-20"
+        aria-label={isSoundOn ? 'Mute sound' : 'Unmute sound'}
+      >
+        {isSoundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+      </Button>
       <AnimatePresence mode="wait">
         <motion.p
           key={currentStep}

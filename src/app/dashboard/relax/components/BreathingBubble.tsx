@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { SoundToggle } from './SoundToggle';
+import { useCalmSound } from '@/hooks/useCalmSound';
+import { Volume2, VolumeX } from 'lucide-react';
 
 // Define the phases of the breathing cycle
 const breathingCycle = [
@@ -13,12 +14,13 @@ const breathingCycle = [
 ];
 
 const SESSION_DURATION = 2 * 60 * 1000; // 2 minutes in milliseconds
-const AMBIENT_SOUND_SRC = 'https://storage.googleapis.com/sound-effects-library/breathing-deep-and-calm-102981.mp3';
+const AMBIENT_SOUND_SRC = '/sounds/breathing-deep-and-calm-102981.mp3';
 
 
 export function BreathingBubble() {
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [isSessionActive, setIsSessionActive] = useState(true);
+  const { isSoundOn, toggleSound } = useCalmSound(AMBIENT_SOUND_SRC);
 
   // Effect to manage the breathing cycle
   useEffect(() => {
@@ -51,7 +53,15 @@ export function BreathingBubble() {
 
   return (
     <div className="relative flex flex-col items-center justify-center h-[60vh] bg-background">
-      <SoundToggle soundSrc={AMBIENT_SOUND_SRC} />
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggleSound}
+        className="absolute top-0 right-0 z-20"
+        aria-label={isSoundOn ? 'Mute sound' : 'Unmute sound'}
+      >
+        {isSoundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+      </Button>
       <AnimatePresence mode="wait">
         {isSessionActive ? (
           <motion.div

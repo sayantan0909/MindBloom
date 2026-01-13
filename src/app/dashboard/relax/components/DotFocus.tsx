@@ -1,14 +1,26 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { SoundToggle } from './SoundToggle';
+import { useCalmSound } from '@/hooks/useCalmSound';
+import { Button } from '@/components/ui/button';
+import { Volume2, VolumeX } from 'lucide-react';
 
-const AMBIENT_SOUND_SRC = 'https://storage.googleapis.com/sound-effects-library/calm-and-peaceful-ambient-music-60-second-version-183030.mp3';
+const AMBIENT_SOUND_SRC = '/sounds/calm-and-peaceful-ambient-music-60-second-version-183030.mp3';
 
 export function DotFocus() {
+  const { isSoundOn, toggleSound } = useCalmSound(AMBIENT_SOUND_SRC);
+
   return (
     <div className="relative flex flex-col items-center justify-center w-full h-[60vh] bg-background overflow-hidden">
-        <SoundToggle soundSrc={AMBIENT_SOUND_SRC} />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleSound}
+          className="absolute top-0 right-0 z-20"
+          aria-label={isSoundOn ? 'Mute sound' : 'Unmute sound'}
+        >
+          {isSoundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+        </Button>
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
