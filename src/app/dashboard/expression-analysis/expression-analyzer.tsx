@@ -7,9 +7,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertTriangle, CheckCircle, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Dynamically import FaceMesh
-let FaceMesh: any;
-
 // Type definitions
 type Phase = 'idle' | 'requesting' | 'ready' | 'baseline' | 'analyzing' | 'success' | 'error';
 type StressLevel = 'Low' | 'Moderate' | 'High';
@@ -20,6 +17,9 @@ const avg = (arr: number[]) => arr.length ? arr.reduce((a, b) => a + b) / arr.le
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(value, max));
 
 function analyzeFacialCues(landmarks: any[]) {
+  if (!landmarks || landmarks.length === 0) {
+    return { ear: 0, brow: 0, jaw: 0, head: { x: 0, y: 0, z: 0 } };
+  }
   const earLeft = p(landmarks[386], landmarks[374]) / p(landmarks[362], landmarks[263]);
   const earRight = p(landmarks[159], landmarks[145]) / p(landmarks[33], landmarks[133]);
   const avgEar = (earLeft + earRight) / 2.0;
@@ -37,6 +37,7 @@ export function ExpressionAnalyzer() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [result, setResult] = useState<StressLevel | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [libraryReady, setLibraryReady] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const faceMeshRef = useRef<any | null>(null);
@@ -46,22 +47,41 @@ export function ExpressionAnalyzer() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Dynamically import the FaceMesh module on component mount
-    (async () => {
+    let cancelled = false;
+
+    async function loadFaceMesh() {
       try {
-        const module = await import('@mediapipe/face_mesh');
-        FaceMesh = module.FaceMesh;
+        const mp = await import('@mediapipe/face_mesh');
+        if (cancelled) return;
+
+        const mesh = new mp.FaceMesh({
+          locateFile: (file: string) =>
+            `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+        });
+
+        mesh.setOptions({
+          maxNumFaces: 1,
+          refineLandmarks: true,
+          minDetectionConfidence: 0.5,
+          minTrackingConfidence: 0.5,
+        });
+
+        faceMeshRef.current = mesh;
+        setLibraryReady(true);
       } catch (e) {
         console.error("Failed to load MediaPipe FaceMesh module", e);
         setError("Failed to load analysis library. Please check your network connection and try again.");
         setPhase('error');
       }
-    })();
-
-    // Cleanup on unmount
-    return () => {
-        stopMediaAndAnalysis();
     }
+
+    loadFaceMesh();
+
+    return () => {
+      cancelled = true;
+      faceMeshRef.current?.close?.();
+      stopMediaAndAnalysis();
+    };
   }, []);
 
   const stopMediaAndAnalysis = useCallback(() => {
@@ -79,11 +99,6 @@ export function ExpressionAnalyzer() {
     
     if (videoRef.current) {
         videoRef.current.srcObject = null;
-    }
-
-    if (faceMeshRef.current) {
-      faceMeshRef.current.close();
-      faceMeshRef.current = null;
     }
   }, []);
 
@@ -121,11 +136,7 @@ export function ExpressionAnalyzer() {
   };
 
   const startAnalysis = useCallback(() => {
-    if (!videoRef.current || !FaceMesh) {
-      setError("Analysis library not loaded. Please refresh and try again.");
-      setPhase('error');
-      return;
-    };
+    if (!libraryReady || !videoRef.current || !faceMeshRef.current) return;
     
     setResult(null);
     setError(null);
@@ -136,12 +147,7 @@ export function ExpressionAnalyzer() {
     
     let scoresBuffer: number[] = [];
     
-    const faceMesh = new FaceMesh({
-      locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
-    });
-    faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
-    
-    faceMesh.onResults((results: any) => {
+    const onResults = (results: any) => {
         if (!results.multiFaceLandmarks || !results.multiFaceLandmarks[0] || !videoRef.current) return;
 
         const landmarks = results.multiFaceLandmarks[0];
@@ -183,11 +189,12 @@ export function ExpressionAnalyzer() {
                 stressScore += 0.25;
             }
 
-            scoresBuffer.push(clamp(stressScore, 0, 2)); // Clamp to a reasonable max
+            scoresBuffer.push(clamp(stressScore, 0, 2));
             if (scoresBuffer.length > 6) scoresBuffer.shift(); 
         }
-    });
-    faceMeshRef.current = faceMesh;
+    };
+
+    faceMeshRef.current.onResults(onResults);
 
     const processFrame = async () => {
       if (videoRef.current && faceMeshRef.current && ['baseline', 'analyzing'].includes(phase)) {
@@ -220,7 +227,7 @@ export function ExpressionAnalyzer() {
     }, 3000); // 3-second baseline period
     analysisTimers.current.push(baselineTimer);
 
-  }, [stopMediaAndAnalysis, phase, toast]);
+  }, [libraryReady, phase, stopMediaAndAnalysis]);
 
   const renderContent = () => {
     switch (phase) {
@@ -242,7 +249,9 @@ export function ExpressionAnalyzer() {
         return (
             <div className="flex flex-col items-center gap-4 text-center">
                 <p className="mb-2 text-muted-foreground">Permissions granted. Click "Start Analysis" to begin.</p>
-                <Button onClick={startAnalysis}>Start Analysis</Button>
+                <Button onClick={startAnalysis} disabled={!libraryReady}>
+                  {libraryReady ? 'Start Analysis' : 'Loading analysis engine…'}
+                </Button>
             </div>
         );
       case 'baseline':
