@@ -6,28 +6,33 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, Video, AlertTriangle, CheckCircle, ShieldCheck } from 'lucide-react';
 import type { FaceMesh } from '@mediapipe/face_mesh';
+import { useToast } from '@/hooks/use-toast';
 
 type Status = 'idle' | 'requesting' | 'ready' | 'baseline' | 'analyzing' | 'success' | 'error';
 type StressLevel = 'Low' | 'Moderate' | 'High';
 
-// Helper function to calculate distance between two 3D points
+// Helper function to calculate distance between two points
 const p = (p1: { x: number; y: number }, p2: { x: number; y: number }) => Math.hypot(p1.x - p2.x, p1.y - p2.y);
 
+// Clamp a value between a min and max
+const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(value, max));
+
+
 /**
- * New, detailed analysis logic based on user specification.
+ * Detailed analysis logic based on facial landmarks.
  */
 function analyzeFacialCues(landmarks: any[]) {
-    // 1. Eye Aspect Ratio (EAR)
+    // 1. Eye Aspect Ratio (EAR) for blink detection
     const earLeft = p(landmarks[386], landmarks[374]) / p(landmarks[362], landmarks[263]);
     const earRight = p(landmarks[159], landmarks[145]) / p(landmarks[33], landmarks[133]);
     const avgEar = (earLeft + earRight) / 2.0;
 
-    // 2. Brow Tension
-    const browTensionLeft = p(landmarks[70], landmarks[159]);
-    const browTensionRight = p(landmarks[300], landmarks[386]);
+    // 2. Brow-to-Eye distance for tension
+    const browTensionLeft = Math.abs(landmarks[70].y - landmarks[159].y);
+    const browTensionRight = Math.abs(landmarks[300].y - landmarks[386].y);
     const avgBrowTension = (browTensionLeft + browTensionRight) / 2.0;
 
-    // 3. Jaw Clenching
+    // 3. Mouth opening for jaw clenching
     const jawOpenness = p(landmarks[13], landmarks[14]);
 
     return { ear: avgEar, brow: avgBrowTension, jaw: jawOpenness, head: landmarks[1] };
@@ -38,12 +43,13 @@ export function ExpressionAnalyzer() {
   const [status, setStatus] = useState<Status>('idle');
   const [result, setResult] = useState<StressLevel | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
   const faceMeshRef = useRef<FaceMesh | null>(null);
   const animationFrameId = useRef<number | null>(null);
   const analysisTimers = useRef<NodeJS.Timeout[]>([]);
+  const { toast } = useToast();
 
   const stopMediaAndAnalysis = useCallback(() => {
     if (animationFrameId.current) {
@@ -52,16 +58,15 @@ export function ExpressionAnalyzer() {
     }
     analysisTimers.current.forEach(clearTimeout);
     analysisTimers.current = [];
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
+    
+    if (videoRef.current && videoRef.current.srcObject) {
+      (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
     }
+
     if (faceMeshRef.current) {
       faceMeshRef.current.close();
       faceMeshRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
     }
   }, []);
 
@@ -71,26 +76,30 @@ export function ExpressionAnalyzer() {
     stopMediaAndAnalysis();
     
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      streamRef.current = mediaStream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        videoRef.current.onloadedmetadata = () => {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        setHasCameraPermission(true);
+        if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            videoRef.current.onloadedmetadata = () => setStatus('ready');
+        } else {
             setStatus('ready');
-        };
-      } else {
-        setStatus('ready');
-      }
+        }
     } catch (err) {
-      console.error("Error accessing media devices.", err);
-      setError("Permission denied. Please allow access to your camera in your browser settings.");
-      setStatus('error');
-      stopMediaAndAnalysis();
+        console.error("Error accessing media devices.", err);
+        setError("Permission denied. Please allow access to your camera in your browser settings.");
+        setHasCameraPermission(false);
+        setStatus('error');
+        stopMediaAndAnalysis();
+        toast({
+            variant: 'destructive',
+            title: 'Camera Access Denied',
+            description: 'Please enable camera permissions to use this feature.',
+        });
     }
   };
 
   const startAnalysis = useCallback(() => {
-    if (!streamRef.current || !videoRef.current || !(window as any).FaceMesh) {
+    if (!videoRef.current || !(window as any).FaceMesh) {
       setError("Analysis library not loaded. Please refresh and try again.");
       setStatus('error');
       return;
@@ -99,46 +108,59 @@ export function ExpressionAnalyzer() {
     setResult(null);
     setError(null);
 
-    let baseline = { ear: 0, brow: 0, jaw: 0, head: { x: 0, y: 0 } };
+    let baseline = { ear: 0, brow: 0, jaw: 0 };
     let baselineSamples = 0;
     let scoresBuffer: number[] = [];
-    let lastHeadPos = { x: 0, y: 0 };
+    let lastHeadPos = { x: 0, y: 0, z: 0 };
     
     const faceMesh = new (window as any).FaceMesh({
       locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
     });
     faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+    
+    let currentPhase: 'baseline' | 'analyzing' = 'baseline';
+
     faceMesh.onResults((results: any) => {
-        if (!results.multiFaceLandmarks || !results.multiFaceLandmarks[0]) return;
+        if (!results.multiFaceLandmarks || !results.multiFaceLandmarks[0] || !videoRef.current) return;
 
         const landmarks = results.multiFaceLandmarks[0];
         const currentMetrics = analyzeFacialCues(landmarks);
         
-        if (status === 'baseline') {
+        if (currentPhase === 'baseline') {
+            if (baselineSamples === 0) { // First frame
+                lastHeadPos = { x: currentMetrics.head.x, y: currentMetrics.head.y, z: currentMetrics.head.z };
+            }
             baseline.ear += currentMetrics.ear;
             baseline.brow += currentMetrics.brow;
             baseline.jaw += currentMetrics.jaw;
             baselineSamples++;
-            lastHeadPos = { x: currentMetrics.head.x, y: currentMetrics.head.y };
-        } else if (status === 'analyzing') {
-            // 5. Normalize Metrics
-            const normEar = currentMetrics.ear / (baseline.ear / baselineSamples);
-            const normBrow = currentMetrics.brow / (baseline.brow / baselineSamples);
-            const normJaw = currentMetrics.jaw / (baseline.jaw / baselineSamples);
-            const headMovement = Math.hypot(currentMetrics.head.x - lastHeadPos.x, currentMetrics.head.y - lastHeadPos.y);
+        } else if (currentPhase === 'analyzing') {
+            const avgBaseline = {
+                ear: baseline.ear / baselineSamples,
+                brow: baseline.brow / baselineSamples,
+                jaw: baseline.jaw / baselineSamples
+            };
 
-            // 6. Stress Scoring
-            const eyeScore = Math.min(1, Math.abs(normEar - 1) * 5); // Amplify deviation
-            const browScore = Math.min(1, Math.abs(normBrow - 1) * 5);
-            const jawScore = Math.min(1, Math.abs(normJaw - 1) * 8); // Jaw clenching has smaller changes
-            const headScore = Math.min(1, headMovement * 50); // Amplify small movements
+            const deltaEye = Math.abs(currentMetrics.ear - avgBaseline.ear) / avgBaseline.ear;
+            const deltaBrow = Math.abs(currentMetrics.brow - avgBaseline.brow) / avgBaseline.brow;
+            const deltaJaw = Math.abs(currentMetrics.jaw - avgBaseline.jaw) / avgBaseline.jaw;
+            const deltaHead = Math.hypot(currentMetrics.head.x - lastHeadPos.x, currentMetrics.head.y - lastHeadPos.y, currentMetrics.head.z - lastHeadPos.z);
+            
+            const eyeScore = clamp(deltaEye * 1.5, 0, 1);
+            const browScore = clamp(deltaBrow * 1.2, 0, 1);
+            const jawScore = clamp(deltaJaw * 1.0, 0, 1);
+            const headScore = clamp(deltaHead * 0.8, 0, 1);
 
-            const stressScore = 0.4 * eyeScore + 0.3 * browScore + 0.2 * jawScore + 0.1 * headScore;
+            let stressScore = 0.4 * eyeScore + 0.3 * browScore + 0.2 * jawScore + 0.1 * headScore;
 
-            // 7. Temporal Smoothing
+            // Stress Trigger: High eye deviation combined with brow or jaw tension
+            if (deltaEye > 0.25 && (deltaBrow > 0.2 || deltaJaw > 0.2)) {
+                stressScore = clamp(stressScore + 0.2, 0, 1);
+            }
+
             scoresBuffer.push(stressScore);
-            if (scoresBuffer.length > 15) scoresBuffer.shift();
-            lastHeadPos = { x: currentMetrics.head.x, y: currentMetrics.head.y };
+            if (scoresBuffer.length > 6) scoresBuffer.shift(); // Reduced smoothing buffer
+            lastHeadPos = { x: currentMetrics.head.x, y: currentMetrics.head.y, z: currentMetrics.head.z };
         }
     });
     faceMeshRef.current = faceMesh;
@@ -151,19 +173,21 @@ export function ExpressionAnalyzer() {
     };
 
     setStatus('baseline');
+    currentPhase = 'baseline';
     processFrame();
 
     const baselineTimer = setTimeout(() => {
         setStatus('analyzing');
+        currentPhase = 'analyzing';
+
         const analysisTimer = setTimeout(() => {
             stopMediaAndAnalysis();
             
             const smoothScore = scoresBuffer.reduce((a, b) => a + b, 0) / (scoresBuffer.length || 1);
 
-            // 8. Final Mapping
             let finalResult: StressLevel = 'Low';
-            if (smoothScore > 0.30) finalResult = 'High'; // Adjusted thresholds
-            else if (smoothScore > 0.15) finalResult = 'Moderate';
+            if (smoothScore > 0.55) finalResult = 'High';
+            else if (smoothScore > 0.25) finalResult = 'Moderate';
 
             setResult(finalResult);
             setStatus('success');
@@ -174,7 +198,7 @@ export function ExpressionAnalyzer() {
     }, 3000); // 3-second baseline period
     analysisTimers.current.push(baselineTimer);
 
-  }, [stopMediaAndAnalysis, status]);
+  }, [stopMediaAndAnalysis, status, toast]);
 
   useEffect(() => {
     return () => {
@@ -195,7 +219,7 @@ export function ExpressionAnalyzer() {
          return (
           <div className="flex items-center justify-center text-muted-foreground">
             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            Requesting permissions...
+            Requesting camera permission...
           </div>
         );
       case 'ready':
@@ -212,7 +236,7 @@ export function ExpressionAnalyzer() {
             <video ref={videoRef} autoPlay muted playsInline className="w-full max-w-md rounded-lg aspect-video bg-black" />
             <div className="flex items-center text-primary font-semibold">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Establishing baseline (3 seconds)...
+              Establishing baseline (3s). Please keep a neutral expression.
             </div>
           </div>
         );
@@ -222,7 +246,7 @@ export function ExpressionAnalyzer() {
             <video ref={videoRef} autoPlay muted playsInline className="w-full max-w-md rounded-lg aspect-video bg-black" />
             <div className="flex items-center text-primary font-semibold">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Analyzing your expression on-device (7 seconds)...
+              Analyzing your expression on-device (7s)...
             </div>
           </div>
         );
