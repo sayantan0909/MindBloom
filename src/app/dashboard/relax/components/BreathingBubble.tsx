@@ -2,52 +2,96 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
 
+// Define the phases of the breathing cycle
 const breathingCycle = [
-  { text: 'Breathe in...', duration: 4000 },
-  { text: 'Hold', duration: 4000 },
-  { text: 'Breathe out...', duration: 6000 },
+  { text: 'Breathe in...', duration: 4000, scale: 1.5 },
+  { text: 'Hold', duration: 4000, scale: 1.5 },
+  { text: 'Breathe out...', duration: 4000, scale: 1 },
 ];
 
+const SESSION_DURATION = 2 * 60 * 1000; // 2 minutes in milliseconds
+
 export function BreathingBubble() {
-  const [phase, setPhase] = useState(0);
+  const [phaseIndex, setPhaseIndex] = useState(0);
+  const [isSessionActive, setIsSessionActive] = useState(true);
 
+  // Effect to manage the breathing cycle
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setPhase((prevPhase) => (prevPhase + 1) % breathingCycle.length);
-    }, breathingCycle[phase].duration);
+    if (!isSessionActive) return;
 
-    return () => clearTimeout(timer);
-  }, [phase]);
+    // Set a timer for the next phase in the cycle
+    const cycleTimer = setTimeout(() => {
+      setPhaseIndex((prevIndex) => (prevIndex + 1) % breathingCycle.length);
+    }, breathingCycle[phaseIndex].duration);
 
-  const currentPhase = breathingCycle[phase];
-  const isBreathingIn = currentPhase.text.includes('in');
+    return () => clearTimeout(cycleTimer);
+  }, [phaseIndex, isSessionActive]);
+
+  // Effect to manage the total session duration
+  useEffect(() => {
+    const sessionTimer = setTimeout(() => {
+      setIsSessionActive(false);
+    }, SESSION_DURATION);
+
+    return () => clearTimeout(sessionTimer);
+  }, [isSessionActive]);
+
+  const handleRestart = () => {
+    setPhaseIndex(0);
+    setIsSessionActive(true);
+  };
+
+  const currentPhase = breathingCycle[phaseIndex];
 
   return (
     <div className="flex flex-col items-center justify-center h-[60vh] bg-background">
-      <motion.div
-        key={phase}
-        animate={{ scale: isBreathingIn ? 1.5 : 1 }}
-        transition={{ duration: currentPhase.duration / 1000, ease: 'easeInOut' }}
-        className="w-48 h-48 md:w-64 md:h-64 bg-primary/20 rounded-full flex items-center justify-center"
-      >
-        <motion.div 
-            className="w-40 h-40 md:w-56 md:h-56 bg-primary/40 rounded-full"
-            animate={{ scale: isBreathingIn ? 1.2 : 1 }}
-            transition={{ duration: currentPhase.duration / 1000, ease: 'easeInOut' }}
-        />
-      </motion.div>
       <AnimatePresence mode="wait">
-        <motion.p
-          key={currentPhase.text}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.5 }}
-          className="mt-12 text-2xl font-semibold text-muted-foreground"
-        >
-          {currentPhase.text}
-        </motion.p>
+        {isSessionActive ? (
+          <motion.div
+            key="bubble"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex flex-col items-center justify-center"
+          >
+            <motion.div
+              animate={{ scale: currentPhase.scale }}
+              transition={{ duration: currentPhase.duration / 1000, ease: 'easeInOut' }}
+              className="w-48 h-48 md:w-64 md:h-64 bg-gradient-to-br from-blue-200 to-green-200 dark:from-blue-900/50 dark:to-green-900/50 rounded-full flex items-center justify-center shadow-lg"
+            >
+              <motion.div 
+                  className="w-40 h-40 md:w-56 md:h-56 bg-gradient-to-br from-blue-300 to-green-300 dark:from-blue-800/50 dark:to-green-800/50 rounded-full"
+                  animate={{ scale: currentPhase.scale === 1.5 ? 1.2 : 1 }}
+                  transition={{ duration: currentPhase.duration / 1000, ease: 'easeInOut' }}
+              />
+            </motion.div>
+            <motion.p
+              key={currentPhase.text}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.5 }}
+              className="mt-12 text-2xl font-semibold text-muted-foreground"
+            >
+              {currentPhase.text}
+            </motion.p>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="completion"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+            className="text-center"
+          >
+            <p className="text-2xl font-semibold text-foreground mb-6">
+              Breathing consistency improved.
+            </p>
+            <Button onClick={handleRestart}>Restart Session</Button>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );
