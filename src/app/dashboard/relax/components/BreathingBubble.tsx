@@ -19,6 +19,12 @@ const phaseStyles: Record<Phase, string> = {
   exhale: 'from-emerald-300 via-green-300 to-lime-200',
 };
 
+const bubbleSize = {
+  inhale: 420,
+  hold: 420,
+  exhale: 260,
+};
+
 const SESSION_DURATION = 2 * 60 * 1000; // 2 minutes in milliseconds
 
 export function BreathingBubble() {
@@ -103,18 +109,19 @@ export function BreathingBubble() {
             transition={{ duration: 0.8, ease: 'easeOut' }}
             className="flex flex-col items-center justify-center"
           >
-            <div className="w-[380px] h-[380px] flex items-center justify-center relative">
+            <div className="w-[420px] h-[420px] flex items-center justify-center relative">
                 <div
-                    className={`rounded-full bg-gradient-to-br ${phaseStyles[phase]}
-                                transition-all duration-[4000ms] ease-in-out animate-[float_6s_ease-in-out_infinite]`}
+                    className={`relative rounded-full transition-all duration-[4000ms] ease-in-out
+              bg-gradient-to-br ${phaseStyles[phase]} animate-[float_6s_ease-in-out_infinite]`}
                     style={{
-                        width: phase === 'inhale' ? 380 : phase === 'hold' ? 380 : 240,
-                        height: phase === 'inhale' ? 380 : phase === 'hold' ? 380 : 240,
+                        width: bubbleSize[phase],
+                        height: bubbleSize[phase],
                         boxShadow: '0 0 60px rgba(100, 200, 200, 0.4)',
                     }}
-                />
-                <div className="absolute text-6xl font-light text-white/90">
-                    {count}
+                >
+                    <div className="absolute inset-0 flex items-center justify-center text-6xl font-light text-white/90">
+                        {count}
+                    </div>
                 </div>
             </div>
             <p className="mt-12 text-2xl font-semibold text-muted-foreground">
