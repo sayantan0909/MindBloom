@@ -95,6 +95,10 @@ export function BreathingBubble() {
     setCycleIndex(0);
     setIsSessionActive(true);
   };
+  
+  const arrow = phase === 'inhale' ? '↑'
+            : phase === 'exhale' ? '↓'
+            : '•';
 
   return (
     <div className="relative flex flex-col items-center justify-center h-[60vh] bg-background">
@@ -112,19 +116,20 @@ export function BreathingBubble() {
             <div className="w-[420px] h-[420px] flex items-center justify-center relative">
                 <div
                     className={`relative rounded-full transition-all duration-[4000ms] ease-in-out
-              bg-gradient-to-br ${phaseStyles[phase]} animate-[float_6s_ease-in-out_infinite]`}
+              bg-gradient-to-br ${phaseStyles[phase]} ${phase !== 'hold' ? 'animate-[float_6s_ease-in-out_infinite]' : ''}`}
                     style={{
                         width: bubbleSize[phase],
                         height: bubbleSize[phase],
                         boxShadow: '0 0 60px rgba(100, 200, 200, 0.4)',
                     }}
                 >
-                    <div className="absolute inset-0 flex items-center justify-center text-6xl font-light text-white/90">
-                        {count}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <div className="text-6xl text-white/90">{arrow}</div>
+                        <div className="text-5xl font-light text-white/90 mt-2">{count}</div>
                     </div>
                 </div>
             </div>
-            <p className="mt-12 text-2xl font-semibold text-muted-foreground">
+            <p className="mt-6 text-lg text-muted-foreground">
                 {phase === 'inhale' && 'Breathe in'}
                 {phase === 'hold' && 'Hold'}
                 {phase === 'exhale' && 'Breathe out'}
