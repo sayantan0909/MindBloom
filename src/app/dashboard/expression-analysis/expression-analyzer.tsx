@@ -4,12 +4,14 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, AlertTriangle, CheckCircle, ShieldCheck } from 'lucide-react';
+import { Loader2, AlertTriangle, CheckCircle, ShieldCheck, Eye, ChevronsUpDown, Zap, BrainCircuit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Progress } from '@/components/ui/progress';
 
 // Type definitions
 type Phase = 'idle' | 'requesting' | 'ready' | 'baseline' | 'analyzing' | 'success' | 'error';
 type StressLevel = 'Low' | 'Moderate' | 'High';
+type MetricScores = { eye: number; brow: number; jaw: number; head: number; };
 
 // --- Helper Functions ---
 const p = (p1: { x: number; y: number }, p2: { x: number; y: number }) => Math.hypot(p1.x - p2.x, p1.y - p2.y);
@@ -38,12 +40,14 @@ export function ExpressionAnalyzer() {
   const [result, setResult] = useState<StressLevel | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [libraryReady, setLibraryReady] = useState(false);
+  const [instantScore, setInstantScore] = useState(0);
+  const [finalScores, setFinalScores] = useState<MetricScores | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
   const faceMeshRef = useRef<any | null>(null);
   const animationFrameId = useRef<number | null>(null);
   const analysisTimers = useRef<NodeJS.Timeout[]>([]);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
   const { toast } = useToast();
 
   const handleResults = useRef<(results: any) => void>(() => {});
@@ -114,6 +118,8 @@ export function ExpressionAnalyzer() {
   const requestPermissions = async () => {
     setPhase('requesting');
     setError(null);
+    setResult(null);
+    setFinalScores(null);
     
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
@@ -149,6 +155,8 @@ export function ExpressionAnalyzer() {
     
     setResult(null);
     setError(null);
+    setInstantScore(0);
+    setFinalScores(null);
 
     let baseline = { ear: 0, brow: 0, jaw: 0, head: { x: 0, y: 0, z: 0 } };
     let baselineSamples = { ear: [] as number[], brow: [] as number[], jaw: [] as number[], headX: [] as number[], headY: [] as number[] };
@@ -197,9 +205,12 @@ export function ExpressionAnalyzer() {
             if (eyeDelta > 0.3) {
                 stressScore += 0.25;
             }
-
-            scoresBuffer.push(clamp(stressScore, 0, 2));
+            
+            const clampedScore = clamp(stressScore, 0, 2);
+            scoresBuffer.push(clampedScore);
             if (scoresBuffer.length > 6) scoresBuffer.shift(); 
+            
+            setInstantScore(avg(scoresBuffer));
         }
     };
 
@@ -225,6 +236,15 @@ export function ExpressionAnalyzer() {
             else finalResult = 'High';
 
             setResult(finalResult);
+            // This is a rough approximation of contribution
+            const total = finalScore > 0 ? finalScore : 1;
+            setFinalScores({
+              eye: clamp((avg(scoresBuffer.slice(-3)) * 1.8) / total, 0, 1),
+              brow: clamp((avg(scoresBuffer.slice(-3)) * 1.4) / total, 0, 1),
+              jaw: clamp((avg(scoresBuffer.slice(-3)) * 1.2) / total, 0, 1),
+              head: clamp((avg(scoresBuffer.slice(-3)) * 1.0) / total, 0, 1),
+            });
+
             setPhase('success');
             stopMediaAndAnalysis();
 
@@ -235,6 +255,14 @@ export function ExpressionAnalyzer() {
     analysisTimers.current.push(baselineTimer);
 
   }, [libraryReady, phase, stopMediaAndAnalysis]);
+  
+  const ScoreBar = ({ label, score, icon: Icon }: { label: string; score: number; icon: React.ElementType }) => (
+    <div className='flex items-center gap-2'>
+        <Icon className="h-5 w-5 text-muted-foreground" />
+        <span className='w-28 text-sm'>{label}</span>
+        <Progress value={score * 100} className='w-full h-3' />
+    </div>
+  );
 
   const renderContent = () => {
     switch (phase) {
@@ -257,18 +285,24 @@ export function ExpressionAnalyzer() {
             <div className="flex flex-col items-center gap-4 text-center">
                 <p className="mb-2 text-muted-foreground">Permissions granted. Click "Start Analysis" to begin.</p>
                 <Button onClick={startAnalysis} disabled={!libraryReady}>
-                  {libraryReady ? 'Start Analysis' : 'Loading analysis engine…'}
+                  {libraryReady ? 'Start Analysis' : <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading Engine...</>}
                 </Button>
             </div>
         );
       case 'baseline':
       case 'analyzing':
         return (
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-4 w-full max-w-sm">
             <div className="flex items-center text-primary font-semibold">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               {phase === 'baseline' ? 'Calibrating… look naturally' : 'Analyzing stress cues…'}
             </div>
+            {phase === 'analyzing' && (
+                <div className='w-full mt-4'>
+                    <Progress value={instantScore * 50} className="h-4 w-full" />
+                    <p className='text-center text-sm mt-2 text-muted-foreground'>Live Stress Meter</p>
+                </div>
+            )}
           </div>
         );
       case 'success':
@@ -283,6 +317,21 @@ export function ExpressionAnalyzer() {
                         This is a non-medical estimation based on facial cues processed locally on your device.
                     </AlertDescription>
                 </Alert>
+
+                 {finalScores && (
+                    <Card className="mt-4 text-left">
+                        <CardHeader className="p-4">
+                            <CardTitle className="text-base">What Influenced Your Score</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0 space-y-3">
+                            <ScoreBar label="Eye Activity" score={finalScores.eye} icon={Eye} />
+                            <ScoreBar label="Brow Tension" score={finalScores.brow} icon={ChevronsUpDown} />
+                            <ScoreBar label="Jaw Clenching" score={finalScores.jaw} icon={Zap} />
+                            <ScoreBar label="Head Movement" score={finalScores.head} icon={BrainCircuit} />
+                        </CardContent>
+                    </Card>
+                )}
+
                 <Alert variant="default" className="mt-4 text-left">
                     <ShieldCheck className="h-4 w-4" />
                     <AlertTitle>Privacy Guaranteed</AlertTitle>
@@ -309,17 +358,19 @@ export function ExpressionAnalyzer() {
   };
 
   return (
-    <div className="mt-6 border rounded-lg p-4 md:p-8 min-h-[450px] flex items-center justify-center bg-secondary/30">
+    <div className="mt-6 border rounded-lg p-4 md:p-8 min-h-[450px] flex flex-col items-center justify-center bg-secondary/30">
         <video
           ref={videoRef}
           autoPlay
           playsInline
           muted
-          className={`w-full max-w-md rounded-xl border ${
+          className={`w-full max-w-md rounded-xl border mb-4 ${
             ['baseline', 'analyzing', 'ready'].includes(phase) ? 'block' : 'hidden'
           }`}
         />
-        {renderContent()}
+        <div className='w-full flex items-center justify-center'>
+            {renderContent()}
+        </div>
     </div>
   );
 }
