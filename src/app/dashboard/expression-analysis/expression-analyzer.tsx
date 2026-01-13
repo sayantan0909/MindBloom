@@ -239,10 +239,10 @@ export function ExpressionAnalyzer() {
             // This is a rough approximation of contribution
             const total = finalScore > 0 ? finalScore : 1;
             setFinalScores({
-              eye: clamp((avg(scoresBuffer.slice(-3)) * 1.8) / total, 0, 1),
-              brow: clamp((avg(scoresBuffer.slice(-3)) * 1.4) / total, 0, 1),
-              jaw: clamp((avg(scoresBuffer.slice(-3)) * 1.2) / total, 0, 1),
-              head: clamp((avg(scoresBuffer.slice(-3)) * 1.0) / total, 0, 1),
+              eye: clamp(avg(scoresBuffer.slice(-3)) * 1.8 / total, 0, 1),
+              brow: clamp(avg(scoresBuffer.slice(-3)) * 1.4 / total, 0, 1),
+              jaw: clamp(avg(scoresBuffer.slice(-3)) * 1.2 / total, 0, 1),
+              head: clamp(avg(scoresBuffer.slice(-3)) * 1.0 / total, 0, 1),
             });
 
             setPhase('success');
@@ -256,11 +256,18 @@ export function ExpressionAnalyzer() {
 
   }, [libraryReady, phase, stopMediaAndAnalysis]);
   
+  const getScoreLabel = (score: number): StressLevel => {
+    if (score < 0.33) return 'Low';
+    if (score < 0.66) return 'Moderate';
+    return 'High';
+  };
+  
   const ScoreBar = ({ label, score, icon: Icon }: { label: string; score: number; icon: React.ElementType }) => (
-    <div className='flex items-center gap-2'>
+    <div className='flex items-center gap-3'>
         <Icon className="h-5 w-5 text-muted-foreground" />
         <span className='w-28 text-sm'>{label}</span>
         <Progress value={score * 100} className='w-full h-3' />
+        <span className="text-sm font-medium w-20 text-right">{getScoreLabel(score)}</span>
     </div>
   );
 
@@ -312,18 +319,21 @@ export function ExpressionAnalyzer() {
           <Card className="bg-background w-full">
             <CardContent className="p-6 text-center">
                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Analysis Complete</h3>
+                <h3 className="text-xl font-semibold mb-2">Here’s What We Observed</h3>
                 <Alert>
                     <AlertTitle className="text-lg">Assessed Stress Level: {result}</AlertTitle>
                     <AlertDescription className="mt-2">
-                        This is a non-medical estimation based on facial cues processed locally on your device.
+                        {result === 'Low' 
+                          ? "Your facial patterns appeared stable, suggesting a calm state. This is a positive sign of well-being."
+                          : "This non-medical estimation is based on facial cues processed locally on your device."
+                        }
                     </AlertDescription>
                 </Alert>
 
                  {finalScores && (
                     <Card className="mt-4 text-left">
                         <CardHeader className="p-4">
-                            <CardTitle className="text-base">What Influenced Your Score</CardTitle>
+                            <CardTitle className="text-base">Key Signals</CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 pt-0 space-y-3">
                             <ScoreBar label="Eye Activity" score={finalScores.eye} icon={Eye} />
@@ -336,7 +346,7 @@ export function ExpressionAnalyzer() {
 
                 <Alert variant="default" className="mt-4 text-left">
                     <ShieldCheck className="h-4 w-4" />
-                    <AlertTitle>Privacy Guaranteed</AlertTitle>
+                    <AlertTitle>Your Privacy is Guaranteed</AlertTitle>
                     <AlertDescription>
                         Your camera has been turned off. No video data was recorded, stored, or sent from your device.
                     </AlertDescription>
