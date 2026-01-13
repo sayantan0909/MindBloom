@@ -44,6 +44,7 @@ export function ExpressionAnalyzer() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [result, setResult] = useState<StressLevel | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [baselineLocked, setBaselineLocked] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const faceMeshRef = useRef<FaceMesh | null>(null);
@@ -73,6 +74,7 @@ export function ExpressionAnalyzer() {
       faceMeshRef.current.close();
       faceMeshRef.current = null;
     }
+    setBaselineLocked(false);
   }, []);
 
   const requestPermissions = async () => {
@@ -123,7 +125,7 @@ export function ExpressionAnalyzer() {
     setError(null);
 
     let baseline = { ear: 0, brow: 0, jaw: 0, head: { x: 0, y: 0, z: 0 } };
-    let baselineSamples = { ear: [] as number[], brow: [] as number[], jaw: [] as number[] };
+    let baselineSamples = { ear: [] as number[], brow: [] as number[], jaw: [] as number[], headX: [] as number[], headY: [] as number[] };
     let lastHeadPos = { x: 0, y: 0, z: 0 };
     let scoresBuffer: number[] = [];
     
@@ -138,32 +140,59 @@ export function ExpressionAnalyzer() {
         const landmarks = results.multiFaceLandmarks[0];
         const currentMetrics = analyzeFacialCues(landmarks);
         
+        console.log({
+          phase,
+          eye: currentMetrics.ear.toFixed(4),
+          brow: currentMetrics.brow.toFixed(4),
+          jaw: currentMetrics.jaw.toFixed(4),
+          head: currentMetrics.head.x.toFixed(4),
+        });
+
         if (phase === 'baseline') {
-            if (baselineSamples.ear.length === 0) { // First frame of baseline
+            if (baselineSamples.ear.length === 0) {
                 lastHeadPos = { x: currentMetrics.head.x, y: currentMetrics.head.y, z: currentMetrics.head.z };
             }
             baselineSamples.ear.push(currentMetrics.ear);
             baselineSamples.brow.push(currentMetrics.brow);
             baselineSamples.jaw.push(currentMetrics.jaw);
-        } else if (phase === 'analyzing') {
+            baselineSamples.headX.push(currentMetrics.head.x);
+            baselineSamples.headY.push(currentMetrics.head.y);
+            return;
+        } 
+        
+        if (phase === 'analyzing') {
+            if (!baselineLocked) {
+                baseline = {
+                    ear: avg(baselineSamples.ear),
+                    brow: avg(baselineSamples.brow),
+                    jaw: avg(baselineSamples.jaw),
+                    head: { x: avg(baselineSamples.headX), y: avg(baselineSamples.headY), z: 0 }
+                };
+                setBaselineLocked(true);
+            }
+            
             const eyeDelta = Math.abs(currentMetrics.ear - baseline.ear) / baseline.ear;
             const browDelta = Math.abs(currentMetrics.brow - baseline.brow) / baseline.brow;
             const jawDelta = Math.abs(currentMetrics.jaw - baseline.jaw) / baseline.jaw;
-            const headDelta = Math.hypot(currentMetrics.head.x - lastHeadPos.x, currentMetrics.head.y - lastHeadPos.y, currentMetrics.head.z - lastHeadPos.z);
-            
-            const eyeScore = clamp(eyeDelta * 1.8, 0, 1);
-            const browScore = clamp(browDelta * 1.4, 0, 1);
-            const jawScore = clamp(jawDelta * 1.2, 0, 1);
-            const headScore = clamp(headDelta * 1.0, 0, 1);
+            const headDelta = Math.hypot(currentMetrics.head.x - lastHeadPos.x, currentMetrics.head.y - lastHeadPos.y);
 
-            let stressScore = 0.4 * eyeScore + 0.3 * browScore + 0.2 * jawScore + 0.1 * headScore;
+            const eyeScore  = Math.min(eyeDelta  * 3.5, 1);
+            const browScore = Math.min(browDelta * 3.0, 1);
+            const jawScore  = Math.min(jawDelta  * 2.5, 1);
+            const headScore = Math.min(headDelta * 2.0, 1);
 
-            if (eyeDelta > 0.3) {
+            let stressScore =
+              0.4 * eyeScore +
+              0.3 * browScore +
+              0.2 * jawScore +
+              0.1 * headScore;
+
+            if (eyeDelta > 0.25 && (browDelta > 0.2 || jawDelta > 0.2)) {
                 stressScore += 0.25;
             }
 
             scoresBuffer.push(clamp(stressScore, 0, 1));
-            if (scoresBuffer.length > 6) scoresBuffer.shift(); 
+            if (scoresBuffer.length > 5) scoresBuffer.shift(); 
             lastHeadPos = { x: currentMetrics.head.x, y: currentMetrics.head.y, z: currentMetrics.head.z };
         }
     });
@@ -180,21 +209,14 @@ export function ExpressionAnalyzer() {
     processFrame();
 
     const baselineTimer = setTimeout(() => {
-        baseline = {
-            ear: avg(baselineSamples.ear),
-            brow: avg(baselineSamples.brow),
-            jaw: avg(baselineSamples.jaw),
-            head: lastHeadPos
-        };
-
         setPhase('analyzing');
 
         const analysisTimer = setTimeout(() => {
             const finalScore = avg(scoresBuffer);
 
             let finalResult: StressLevel = 'Low';
-            if (finalScore > 0.55) finalResult = 'High';
-            else if (finalScore > 0.25) finalResult = 'Moderate';
+            if (finalScore > 0.60) finalResult = 'High';
+            else if (finalScore > 0.30) finalResult = 'Moderate';
 
             setResult(finalResult);
             setPhase('success');
@@ -206,7 +228,7 @@ export function ExpressionAnalyzer() {
     }, 3000); // 3-second baseline period
     analysisTimers.current.push(baselineTimer);
 
-  }, [stopMediaAndAnalysis, phase, toast]);
+  }, [stopMediaAndAnalysis, phase, toast, baselineLocked]);
 
   useEffect(() => {
     return () => {
