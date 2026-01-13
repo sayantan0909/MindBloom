@@ -31,6 +31,7 @@ export function BreathingBubble() {
 
   // Effect to manage the total session duration
   useEffect(() => {
+    if (!isSessionActive) return;
     const sessionTimer = setTimeout(() => {
       setIsSessionActive(false);
     }, SESSION_DURATION);
@@ -54,6 +55,7 @@ export function BreathingBubble() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
             className="flex flex-col items-center justify-center"
           >
             <motion.div

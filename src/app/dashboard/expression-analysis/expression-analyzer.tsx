@@ -2,18 +2,40 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, AlertTriangle, CheckCircle, ShieldCheck, Eye, ChevronsUpDown, Zap, BrainCircuit, Activity } from 'lucide-react';
+import { Loader2, AlertTriangle, CheckCircle, ShieldCheck, Eye, ChevronsUpDown, Zap, BrainCircuit, Activity, Wind, Hand } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { AnimatePresence, motion } from 'framer-motion';
+import Link from 'next/link';
 
 // Type definitions
 type Phase = 'idle' | 'requesting' | 'ready' | 'baseline' | 'analyzing' | 'success' | 'error';
 type StressLevel = 'Low' | 'Moderate' | 'High';
 type MetricScores = { eye: number; brow: number; jaw: number; head: number; };
 type SignalStatus = 'Stable' | 'Minimal' | 'Active';
+
+const recommendationMap = {
+  High: {
+    title: 'Breathing Bubble',
+    description: 'Sync your breath with a calming visual guide to lower stress and find your center.',
+    icon: Wind,
+    link: '/dashboard/relax?game=breathing',
+  },
+  Moderate: {
+    title: 'Muscle Release',
+    description: 'Follow a simple guide to progressively tense and release facial muscles, melting away physical stress.',
+    icon: Hand,
+    link: '/dashboard/relax?game=muscle',
+  },
+  Low: {
+    title: 'Dot Focus',
+    description: 'Gently guide your eyes to follow a slowly moving dot, helping to quiet a busy mind.',
+    icon: Eye,
+    link: '/dashboard/relax?game=focus',
+  },
+};
 
 // --- Helper Functions ---
 const p = (p1: { x: number; y: number }, p2: { x: number; y: number }) => Math.hypot(p1.x - p2.x, p1.y - p2.y);
@@ -290,6 +312,35 @@ export function ExpressionAnalyzer() {
         </div>
     );
   };
+  
+  const RecommendedGame = ({ level }: { level: StressLevel }) => {
+    const recommendation = recommendationMap[level];
+    if (!recommendation) return null;
+
+    const { title, description, icon: Icon, link } = recommendation;
+    
+    return (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.5 }}>
+            <Card className="mt-6 bg-secondary/30">
+                <CardHeader>
+                    <CardTitle className="text-base font-semibold">Recommended Next Step</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                    <div className="bg-primary/10 p-3 rounded-full">
+                        <Icon className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="flex-grow">
+                        <h4 className="font-semibold">{title}</h4>
+                        <p className="text-sm text-muted-foreground">{description}</p>
+                    </div>
+                    <Button asChild className="w-full sm:w-auto mt-4 sm:mt-0">
+                        <Link href={link}>Start Now</Link>
+                    </Button>
+                </CardContent>
+            </Card>
+        </motion.div>
+    );
+  };
 
   const renderContent = () => {
     switch (phase) {
@@ -350,7 +401,7 @@ export function ExpressionAnalyzer() {
       case 'success':
         return (
           <AnimatePresence>
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full">
               <Card className="bg-background w-full">
                 <CardContent className="p-6 text-center">
                     <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
@@ -389,6 +440,7 @@ export function ExpressionAnalyzer() {
                     <Button onClick={requestPermissions} className="w-full mt-6">Run Analysis Again</Button>
                 </CardContent>
               </Card>
+               {result && <RecommendedGame level={result} />}
             </motion.div>
           </AnimatePresence>
         );
