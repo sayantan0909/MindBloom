@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
 import { FloatingSoundControl } from './FloatingSoundControl';
 
 type Phase = 'inhale' | 'hold' | 'exhale';
@@ -36,6 +34,7 @@ export function BreathingBubble() {
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [soundOn, setSoundOn] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(false);
 
   const toggleSound = async () => {
     if (!audioRef.current) {
@@ -55,11 +54,25 @@ export function BreathingBubble() {
       console.error('Audio blocked:', e);
     }
   };
+
+  const speak = (text: string) => {
+    if (!('speechSynthesis' in window)) return;
+
+    window.speechSynthesis.cancel(); // stop previous speech
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.85;   // slower, calming
+    utterance.pitch = 1.0;
+    utterance.volume = 0.8;
+
+    window.speechSynthesis.speak(utterance);
+  };
   
   useEffect(() => {
     return () => {
       audioRef.current?.pause();
       audioRef.current = null;
+      window.speechSynthesis.cancel();
     };
   }, []);
 
@@ -95,6 +108,14 @@ export function BreathingBubble() {
 
     return () => clearTimeout(sessionTimer);
   }, [isSessionActive]);
+
+  useEffect(() => {
+    if (!voiceOn || completed) return;
+
+    if (phase === 'inhale') speak('Breathe in');
+    if (phase === 'hold') speak('Hold');
+    if (phase === 'exhale') speak('Breathe out');
+  }, [phase, voiceOn, completed]);
   
   const handleRestart = () => {
     setCycleIndex(0);
@@ -110,6 +131,13 @@ export function BreathingBubble() {
             }`}
         />
       <FloatingSoundControl soundOn={soundOn} toggle={toggleSound} />
+      <button
+        onClick={() => setVoiceOn(!voiceOn)}
+        className="fixed bottom-20 right-6 z-50 rounded-full
+                    bg-white/90 px-4 py-2 shadow backdrop-blur"
+        >
+        {voiceOn ? '🗣️ Voice On' : '🔇 Voice Off'}
+        </button>
         <div className="relative flex flex-col items-center justify-center">
             <div className="w-[420px] h-[420px] flex items-center justify-center relative">
                 <div
