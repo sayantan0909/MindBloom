@@ -1,0 +1,1 @@
+This folder is for static audio files. You can place your MP3 files here, and they will be accessible at /sounds/your-file-name.mp3.
