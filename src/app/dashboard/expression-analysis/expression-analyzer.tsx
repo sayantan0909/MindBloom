@@ -78,18 +78,24 @@ export function ExpressionAnalyzer() {
   const requestPermissions = async () => {
     setPhase('requesting');
     setError(null);
-    stopMediaAndAnalysis();
     
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
         mediaStreamRef.current = stream;
-        if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-            videoRef.current.onloadedmetadata = () => {
-                videoRef.current?.play();
-                setPhase('ready');
-            };
+        
+        const video = videoRef.current;
+        if (!video) {
+            console.error('Video element not found.');
+            setPhase('error');
+            setError('An unexpected error occurred. Please refresh the page.');
+            return;
         }
+
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+            video.play();
+            setPhase('ready');
+        };
     } catch (err) {
         console.error("Error accessing media devices.", err);
         setError("Permission denied. Please allow access to your camera in your browser settings.");
@@ -225,7 +231,6 @@ export function ExpressionAnalyzer() {
         return (
             <div className="flex flex-col items-center gap-4 text-center">
                 <p className="mb-2 text-muted-foreground">Permissions granted. Click "Start Analysis" to begin.</p>
-                <video ref={videoRef} className="w-full max-w-md rounded-xl border" autoPlay muted playsInline />
                 <Button onClick={startAnalysis}>Start Analysis</Button>
             </div>
         );
@@ -233,7 +238,6 @@ export function ExpressionAnalyzer() {
       case 'analyzing':
         return (
           <div className="flex flex-col items-center gap-4">
-            <video ref={videoRef} className="w-full max-w-md rounded-xl border" autoPlay muted playsInline />
             <div className="flex items-center text-primary font-semibold">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               {phase === 'baseline' ? 'Calibrating… look naturally' : 'Analyzing stress cues…'}
@@ -279,9 +283,8 @@ export function ExpressionAnalyzer() {
 
   return (
     <div className="mt-6 border rounded-lg p-4 md:p-8 min-h-[450px] flex items-center justify-center bg-secondary/30">
+        <video ref={videoRef} autoPlay playsInline muted className={cn("w-full max-w-md rounded-xl border", ['baseline', 'analyzing', 'ready'].includes(phase) ? 'block' : 'hidden')} />
         {renderContent()}
     </div>
   );
 }
-
-    
