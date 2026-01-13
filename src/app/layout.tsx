@@ -23,26 +23,6 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <MouseTrail />
-        <button
-          onClick={() => {
-            const a = new Audio('/sounds/calm.mp3');
-            a.loop = true;
-            a.volume = 0.25;
-            a.play();
-          }}
-          style={{
-            position: 'fixed',
-            top: 20,
-            right: 20,
-            zIndex: 9999,
-            padding: '10px 14px',
-            background: '#000',
-            color: '#fff',
-            borderRadius: '8px',
-          }}
-        >
-          TEST SOUND
-        </button>
         <FirebaseClientProvider>
           {children}
         </FirebaseClientProvider>
