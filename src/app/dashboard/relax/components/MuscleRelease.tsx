@@ -51,10 +51,10 @@ export function MuscleRelease() {
   
   // Effect to clean up audio on unmount
   useEffect(() => {
-    const audio = audioRef.current;
     return () => {
-      audio?.pause();
-    }
+      audioRef.current?.pause();
+      audioRef.current = null;
+    };
   }, []);
 
   return (
