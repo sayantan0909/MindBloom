@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { FloatingSoundControl } from './FloatingSoundControl';
 
 const steps = [
   { text: 'Get comfortable in your seat.', duration: 4000 },
@@ -59,13 +60,7 @@ export function MuscleRelease() {
 
   return (
     <div className="relative flex flex-col items-center justify-center h-[60vh] bg-background text-center p-4">
-      <button
-        onClick={toggleSound}
-        type="button"
-        className="fixed top-6 right-6 z-50 bg-white/80 rounded-full p-2 shadow"
-      >
-        {soundOn ? '🔊' : '🔈'}
-      </button>
+      <FloatingSoundControl soundOn={soundOn} toggle={toggleSound} />
       <AnimatePresence mode="wait">
         <motion.p
           key={currentStep}

@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useState, useRef, useEffect } from 'react';
+import { FloatingSoundControl } from './FloatingSoundControl';
 
 export function DotFocus() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -36,13 +37,7 @@ export function DotFocus() {
 
   return (
     <div className="relative flex flex-col items-center justify-center w-full h-[60vh] bg-background overflow-hidden">
-        <button
-          onClick={toggleSound}
-          type="button"
-          className="fixed top-6 right-6 z-50 bg-white/80 rounded-full p-2 shadow"
-        >
-          {soundOn ? '🔊' : '🔈'}
-        </button>
+        <FloatingSoundControl soundOn={soundOn} toggle={toggleSound} />
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

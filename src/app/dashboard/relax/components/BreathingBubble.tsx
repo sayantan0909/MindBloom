@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { FloatingSoundControl } from './FloatingSoundControl';
 
 // Define the phases of the breathing cycle
 const breathingCycle = [
@@ -78,13 +79,7 @@ export function BreathingBubble() {
 
   return (
     <div className="relative flex flex-col items-center justify-center h-[60vh] bg-background">
-      <button
-        onClick={toggleSound}
-        type="button"
-        className="fixed top-6 right-6 z-50 bg-white/80 rounded-full p-2 shadow"
-      >
-        {soundOn ? '🔊' : '🔈'}
-      </button>
+      <FloatingSoundControl soundOn={soundOn} toggle={toggleSound} />
       <AnimatePresence mode="wait">
         {isSessionActive ? (
           <motion.div
