@@ -5,18 +5,26 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { FloatingSoundControl } from './FloatingSoundControl';
 
-// Define the phases of the breathing cycle
-const breathingCycle = [
-  { text: 'Breathe in...', duration: 4000, scale: 1.5 },
-  { text: 'Hold', duration: 4000, scale: 1.5 },
-  { text: 'Breathe out...', duration: 4000, scale: 1 },
+type Phase = 'inhale' | 'hold' | 'exhale';
+
+const breathingCycle: { phase: Phase; text: string; duration: number }[] = [
+  { phase: 'inhale', text: 'Breathe in...', duration: 4000 },
+  { phase: 'hold', text: 'Hold', duration: 4000 },
+  { phase: 'exhale', text: 'Breathe out...', duration: 4000 },
 ];
+
+const phaseStyles: Record<Phase, string> = {
+  inhale: 'from-sky-400 via-cyan-300 to-teal-300',
+  hold: 'from-purple-300 via-indigo-300 to-blue-300',
+  exhale: 'from-emerald-300 via-green-300 to-lime-200',
+};
 
 const SESSION_DURATION = 2 * 60 * 1000; // 2 minutes in milliseconds
 
 export function BreathingBubble() {
-  const [phaseIndex, setPhaseIndex] = useState(0);
+  const [cycleIndex, setCycleIndex] = useState(0);
   const [isSessionActive, setIsSessionActive] = useState(true);
+  
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [soundOn, setSoundOn] = useState(false);
 
@@ -39,20 +47,23 @@ export function BreathingBubble() {
     }
   };
 
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+      audioRef.current = null;
+    };
+  }, []);
 
-  // Effect to manage the breathing cycle
   useEffect(() => {
     if (!isSessionActive) return;
 
-    // Set a timer for the next phase in the cycle
     const cycleTimer = setTimeout(() => {
-      setPhaseIndex((prevIndex) => (prevIndex + 1) % breathingCycle.length);
-    }, breathingCycle[phaseIndex].duration);
+      setCycleIndex((prevIndex) => (prevIndex + 1) % breathingCycle.length);
+    }, breathingCycle[cycleIndex].duration);
 
     return () => clearTimeout(cycleTimer);
-  }, [phaseIndex, isSessionActive]);
+  }, [cycleIndex, isSessionActive]);
 
-  // Effect to manage the total session duration
   useEffect(() => {
     if (!isSessionActive) return;
     const sessionTimer = setTimeout(() => {
@@ -62,20 +73,13 @@ export function BreathingBubble() {
     return () => clearTimeout(sessionTimer);
   }, [isSessionActive]);
   
-  // Effect to clean up audio on unmount
-  useEffect(() => {
-    return () => {
-      audioRef.current?.pause();
-      audioRef.current = null;
-    };
-  }, []);
-
   const handleRestart = () => {
-    setPhaseIndex(0);
+    setCycleIndex(0);
     setIsSessionActive(true);
   };
 
-  const currentPhase = breathingCycle[phaseIndex];
+  const currentPhase = breathingCycle[cycleIndex];
+  const phase: Phase = currentPhase.phase;
 
   return (
     <div className="relative flex flex-col items-center justify-center h-[60vh] bg-background">
@@ -90,17 +94,16 @@ export function BreathingBubble() {
             transition={{ duration: 0.8, ease: 'easeOut' }}
             className="flex flex-col items-center justify-center"
           >
-            <motion.div
-              animate={{ scale: currentPhase.scale }}
-              transition={{ duration: currentPhase.duration / 1000, ease: 'easeInOut' }}
-              className="w-48 h-48 md:w-64 md:h-64 bg-gradient-to-br from-blue-200 to-green-200 dark:from-blue-900/50 dark:to-green-900/50 rounded-full flex items-center justify-center shadow-lg"
-            >
-              <motion.div 
-                  className="w-40 h-40 md:w-56 md:h-56 bg-gradient-to-br from-blue-300 to-green-300 dark:from-blue-800/50 dark:to-green-800/50 rounded-full"
-                  animate={{ scale: currentPhase.scale === 1.5 ? 1.2 : 1 }}
-                  transition={{ duration: currentPhase.duration / 1000, ease: 'easeInOut' }}
-              />
-            </motion.div>
+            <div className="w-[380px] h-[380px] flex items-center justify-center">
+                <div
+                    className={`rounded-full bg-gradient-to-br ${phaseStyles[phase]}
+                                transition-all duration-[4000ms] ease-in-out`}
+                    style={{
+                        width: phase === 'inhale' ? 380 : phase === 'hold' ? 380 : 240,
+                        height: phase === 'inhale' ? 380 : phase === 'hold' ? 380 : 240,
+                    }}
+                />
+            </div>
             <motion.p
               key={currentPhase.text}
               initial={{ opacity: 0, y: 10 }}
