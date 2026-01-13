@@ -286,7 +286,15 @@ export function ExpressionAnalyzer() {
 
   return (
     <div className="mt-6 border rounded-lg p-4 md:p-8 min-h-[450px] flex items-center justify-center bg-secondary/30">
-        <video ref={videoRef} autoPlay playsInline muted className={cn("w-full max-w-md rounded-xl border", ['baseline', 'analyzing', 'ready'].includes(phase) ? 'block' : 'hidden')} />
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className={`w-full max-w-md rounded-xl border ${
+            ['baseline', 'analyzing', 'ready'].includes(phase) ? 'block' : 'hidden'
+          }`}
+        />
         {renderContent()}
     </div>
   );
