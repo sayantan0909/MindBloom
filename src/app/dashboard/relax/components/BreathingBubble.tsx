@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Volume2, VolumeX } from 'lucide-react';
 
 // Define the phases of the breathing cycle
 const breathingCycle = [
@@ -17,29 +16,28 @@ const SESSION_DURATION = 2 * 60 * 1000; // 2 minutes in milliseconds
 export function BreathingBubble() {
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [isSessionActive, setIsSessionActive] = useState(true);
-
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [isSoundOn, setIsSoundOn] = useState(false);
+  const [soundOn, setSoundOn] = useState(false);
 
   const toggleSound = async () => {
     if (!audioRef.current) {
-      audioRef.current = new Audio('/sounds/breathing-deep-and-calm-102981.mp3');
+      audioRef.current = new Audio('/sounds/calm.mp3');
       audioRef.current.loop = true;
-      audioRef.current.volume = 0.3;
+      audioRef.current.volume = 0.25;
     }
 
     try {
-        if (isSoundOn) {
-            audioRef.current.pause();
-        } else {
-            await audioRef.current.play();
-        }
-        setIsSoundOn(!isSoundOn);
-    } catch(e) {
-        console.error("Audio play failed:", e);
-        setIsSoundOn(false);
+      if (soundOn) {
+        audioRef.current.pause();
+      } else {
+        await audioRef.current.play();
+      }
+      setSoundOn(!soundOn);
+    } catch (e) {
+      console.error('Audio blocked:', e);
     }
   };
+
 
   // Effect to manage the breathing cycle
   useEffect(() => {
@@ -80,15 +78,13 @@ export function BreathingBubble() {
 
   return (
     <div className="relative flex flex-col items-center justify-center h-[60vh] bg-background">
-      <Button
-        variant="ghost"
-        size="icon"
+      <button
         onClick={toggleSound}
-        className="absolute top-0 right-0 z-20"
-        aria-label={isSoundOn ? 'Mute sound' : 'Unmute sound'}
+        type="button"
+        className="fixed top-6 right-6 z-50 bg-white/80 rounded-full p-2 shadow"
       >
-        {isSoundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
-      </Button>
+        {soundOn ? '🔊' : '🔈'}
+      </button>
       <AnimatePresence mode="wait">
         {isSessionActive ? (
           <motion.div

@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Volume2, VolumeX } from 'lucide-react';
 
 const steps = [
   { text: 'Get comfortable in your seat.', duration: 4000 },
@@ -18,27 +17,25 @@ const steps = [
 
 export function MuscleRelease() {
   const [currentStep, setCurrentStep] = useState(0);
-
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [isSoundOn, setIsSoundOn] = useState(false);
+  const [soundOn, setSoundOn] = useState(false);
 
   const toggleSound = async () => {
     if (!audioRef.current) {
-      audioRef.current = new Audio('/sounds/calm-river-ambience-loop-1-182375.mp3');
+      audioRef.current = new Audio('/sounds/calm.mp3');
       audioRef.current.loop = true;
-      audioRef.current.volume = 0.3;
+      audioRef.current.volume = 0.25;
     }
 
-     try {
-        if (isSoundOn) {
-            audioRef.current.pause();
-        } else {
-            await audioRef.current.play();
-        }
-        setIsSoundOn(!isSoundOn);
-    } catch(e) {
-        console.error("Audio play failed:", e);
-        setIsSoundOn(false);
+    try {
+      if (soundOn) {
+        audioRef.current.pause();
+      } else {
+        await audioRef.current.play();
+      }
+      setSoundOn(!soundOn);
+    } catch (e) {
+      console.error('Audio blocked:', e);
     }
   };
 
@@ -62,15 +59,13 @@ export function MuscleRelease() {
 
   return (
     <div className="relative flex flex-col items-center justify-center h-[60vh] bg-background text-center p-4">
-      <Button
-        variant="ghost"
-        size="icon"
+      <button
         onClick={toggleSound}
-        className="absolute top-0 right-0 z-20"
-        aria-label={isSoundOn ? 'Mute sound' : 'Unmute sound'}
+        type="button"
+        className="fixed top-6 right-6 z-50 bg-white/80 rounded-full p-2 shadow"
       >
-        {isSoundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
-      </Button>
+        {soundOn ? '🔊' : '🔈'}
+      </button>
       <AnimatePresence mode="wait">
         <motion.p
           key={currentStep}

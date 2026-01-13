@@ -1,31 +1,28 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Volume2, VolumeX } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
 export function DotFocus() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [isSoundOn, setIsSoundOn] = useState(false);
+  const [soundOn, setSoundOn] = useState(false);
 
   const toggleSound = async () => {
     if (!audioRef.current) {
-      audioRef.current = new Audio('/sounds/calm-and-peaceful-ambient-music-60-second-version-183030.mp3');
+      audioRef.current = new Audio('/sounds/calm.mp3');
       audioRef.current.loop = true;
-      audioRef.current.volume = 0.3;
+      audioRef.current.volume = 0.25;
     }
     
      try {
-        if (isSoundOn) {
+        if (soundOn) {
             audioRef.current.pause();
         } else {
             await audioRef.current.play();
         }
-        setIsSoundOn(!isSoundOn);
+        setSoundOn(!soundOn);
     } catch(e) {
-        console.error("Audio play failed:", e);
-        setIsSoundOn(false);
+        console.error("Audio blocked:", e);
     }
   };
 
@@ -39,15 +36,13 @@ export function DotFocus() {
 
   return (
     <div className="relative flex flex-col items-center justify-center w-full h-[60vh] bg-background overflow-hidden">
-        <Button
-          variant="ghost"
-          size="icon"
+        <button
           onClick={toggleSound}
-          className="absolute top-0 right-0 z-20"
-          aria-label={isSoundOn ? 'Mute sound' : 'Unmute sound'}
+          type="button"
+          className="fixed top-6 right-6 z-50 bg-white/80 rounded-full p-2 shadow"
         >
-          {isSoundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
-        </Button>
+          {soundOn ? '🔊' : '🔈'}
+        </button>
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
