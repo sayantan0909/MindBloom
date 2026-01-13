@@ -114,7 +114,11 @@ export function ExpressionAnalyzer() {
    * Initializes FaceMesh and Web Audio API and starts the 5-second analysis.
    */
   const startAnalysis = useCallback(() => {
-    if (!streamRef.current || !videoRef.current) return;
+    if (!streamRef.current || !videoRef.current || !(window as any).FaceMesh) {
+      setError("Analysis library not loaded. Please refresh and try again.");
+      setStatus('error');
+      return;
+    };
     
     setStatus('analyzing');
     setResult(null);
@@ -124,7 +128,7 @@ export function ExpressionAnalyzer() {
 
     // --- FaceMesh Setup (Client-Side) ---
     const faceMesh = new (window as any).FaceMesh({
-      locateFile: (file: any) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+      locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
     });
     faceMesh.setOptions({
       maxNumFaces: 1,
