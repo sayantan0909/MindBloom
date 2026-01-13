@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { FloatingSoundControl } from './FloatingSoundControl';
+import { Button } from '@/components/ui/button';
 
 type Phase = 'inhale' | 'hold' | 'exhale';
 
@@ -209,13 +210,11 @@ export function BreathingBubble() {
                     <p className="mt-2 text-sm text-muted-foreground">
                         Your body is now in a calmer state
                     </p>
-                    <button
-                        onClick={handleRestart}
-                        className="mt-6 rounded-full px-6 py-2 bg-emerald-600 text-white
-                                hover:bg-emerald-500 transition"
-                    >
-                        Restart breathing
-                    </button>
+                    <div className='flex gap-3 mt-6'>
+                        <Button onClick={handleRestart}>
+                            Restart
+                        </Button>
+                    </div>
                 </div>
             )}
         </div>

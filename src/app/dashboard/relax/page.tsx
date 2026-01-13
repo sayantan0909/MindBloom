@@ -44,7 +44,7 @@ function RelaxContent() {
           <Button 
             variant="ghost" 
             onClick={() => setActiveGame(null)}
-            className="absolute top-0 left-0 z-10"
+            className="absolute top-0 left-0 z-10 inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 transition"
           >
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Exercises
           </Button>
