@@ -12,7 +12,7 @@ export default function ExpressionAnalysisPage() {
           </div>
           <CardTitle className="text-3xl font-headline">AI Expression Analysis</CardTitle>
           <CardDescription className="text-base">
-            Let's check your current stress level. This tool will use your device's camera and microphone for a few seconds to analyze your facial and audio cues. 
+            Let's check your current stress level. This tool will use your device's camera for a few seconds to analyze your facial cues. 
             Your privacy is paramount—no data is stored.
           </CardDescription>
         </CardHeader>
