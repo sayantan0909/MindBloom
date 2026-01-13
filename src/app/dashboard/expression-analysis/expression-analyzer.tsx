@@ -4,14 +4,16 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, AlertTriangle, CheckCircle, ShieldCheck, Eye, ChevronsUpDown, Zap, BrainCircuit } from 'lucide-react';
+import { Loader2, AlertTriangle, CheckCircle, ShieldCheck, Eye, ChevronsUpDown, Zap, BrainCircuit, Activity } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
+import { AnimatePresence, motion } from 'framer-motion';
 
 // Type definitions
 type Phase = 'idle' | 'requesting' | 'ready' | 'baseline' | 'analyzing' | 'success' | 'error';
 type StressLevel = 'Low' | 'Moderate' | 'High';
 type MetricScores = { eye: number; brow: number; jaw: number; head: number; };
+type SignalStatus = 'Stable' | 'Minimal' | 'Active';
 
 // --- Helper Functions ---
 const p = (p1: { x: number; y: number }, p2: { x: number; y: number }) => Math.hypot(p1.x - p2.x, p1.y - p2.y);
@@ -42,6 +44,7 @@ export function ExpressionAnalyzer() {
   const [libraryReady, setLibraryReady] = useState(false);
   const [instantScore, setInstantScore] = useState(0);
   const [finalScores, setFinalScores] = useState<MetricScores | null>(null);
+  const [liveSignals, setLiveSignals] = useState({ eye: 'Stable', brow: 'Stable', jaw: 'Stable', head: 'Stable' });
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -67,8 +70,6 @@ export function ExpressionAnalyzer() {
 
       if (cancelled) return;
       
-      console.log('FaceMesh loaded');
-
       // @ts-ignore
       const mesh = new window.FaceMesh({
         locateFile: (file: string) =>
@@ -157,6 +158,7 @@ export function ExpressionAnalyzer() {
     setError(null);
     setInstantScore(0);
     setFinalScores(null);
+    setLiveSignals({ eye: 'Stable', brow: 'Stable', jaw: 'Stable', head: 'Stable' });
 
     let baseline = { ear: 0, brow: 0, jaw: 0, head: { x: 0, y: 0, z: 0 } };
     let baselineSamples = { ear: [] as number[], brow: [] as number[], jaw: [] as number[], headX: [] as number[], headY: [] as number[] };
@@ -211,6 +213,13 @@ export function ExpressionAnalyzer() {
             if (scoresBuffer.length > 6) scoresBuffer.shift(); 
             
             setInstantScore(avg(scoresBuffer));
+
+             setLiveSignals({
+                eye: eyeDelta > 0.25 ? 'Active' : (eyeDelta > 0.1 ? 'Minimal' : 'Stable'),
+                brow: browDelta > 0.2 ? 'Active' : (browDelta > 0.08 ? 'Minimal' : 'Stable'),
+                jaw: jawDelta > 0.2 ? 'Active' : (jawDelta > 0.08 ? 'Minimal' : 'Stable'),
+                head: headDelta > 0.15 ? 'Active' : (headDelta > 0.05 ? 'Minimal' : 'Stable'),
+            });
         }
     };
 
@@ -236,7 +245,6 @@ export function ExpressionAnalyzer() {
             else finalResult = 'High';
 
             setResult(finalResult);
-            // This is a rough approximation of contribution
             const total = finalScore > 0 ? finalScore : 1;
             setFinalScores({
               eye: clamp(avg(scoresBuffer.slice(-3)) * 1.8 / total, 0, 1),
@@ -248,10 +256,10 @@ export function ExpressionAnalyzer() {
             setPhase('success');
             stopMediaAndAnalysis();
 
-        }, 7000); // 7-second analysis period
+        }, 7000); 
         analysisTimers.current.push(analysisTimer);
 
-    }, 3000); // 3-second baseline period
+    }, 3000);
     analysisTimers.current.push(baselineTimer);
 
   }, [libraryReady, phase, stopMediaAndAnalysis]);
@@ -266,10 +274,22 @@ export function ExpressionAnalyzer() {
     <div className='flex items-center gap-3'>
         <Icon className="h-5 w-5 text-muted-foreground" />
         <span className='w-28 text-sm'>{label}</span>
-        <Progress value={score * 100} className='w-full h-3' />
+         <motion.div initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 0.8, ease: 'easeOut' }} className="flex-1">
+            <Progress value={score * 100} className='w-full h-3' />
+        </motion.div>
         <span className="text-sm font-medium w-20 text-right">{getScoreLabel(score)}</span>
     </div>
   );
+
+  const LiveSignal = ({ label, status }: { label: string; status: SignalStatus }) => {
+    const color = status === 'Active' ? 'text-red-500' : status === 'Minimal' ? 'text-yellow-500' : 'text-green-500';
+    return (
+        <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">{label}</span>
+            <span className={`font-medium ${color}`}>{status}</span>
+        </div>
+    );
+  };
 
   const renderContent = () => {
     switch (phase) {
@@ -307,53 +327,70 @@ export function ExpressionAnalyzer() {
               {phase === 'baseline' ? 'Calibrating… look naturally' : 'Analyzing stress cues…'}
             </div>
             {phase === 'analyzing' && (
-                <div className='w-full mt-4'>
-                    <Progress value={instantScore * 50} className="h-4 w-full" />
-                    <p className='text-center text-sm mt-2 text-muted-foreground'>Live Stress Meter</p>
+                <div className='w-full mt-4 space-y-4'>
+                    <div>
+                        <Progress value={instantScore * 50} className="h-4 w-full" />
+                        <p className='text-center text-sm mt-2 text-muted-foreground'>Live Stress Meter</p>
+                    </div>
+                     <Card className="bg-secondary/50">
+                        <CardHeader className="p-2 pb-0">
+                            <CardTitle className="text-sm flex items-center gap-2"><Activity className="h-4 w-4" /> Live Signal Activity</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-2 space-y-1">
+                            <LiveSignal label="Eye Activity" status={liveSignals.eye} />
+                            <LiveSignal label="Brow Tension" status={liveSignals.brow} />
+                            <LiveSignal label="Jaw Clenching" status={liveSignals.jaw} />
+                            <LiveSignal label="Head Movement" status={liveSignals.head} />
+                        </CardContent>
+                    </Card>
                 </div>
             )}
           </div>
         );
       case 'success':
         return (
-          <Card className="bg-background w-full">
-            <CardContent className="p-6 text-center">
-                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Here’s What We Observed</h3>
-                <Alert>
-                    <AlertTitle className="text-lg">Assessed Stress Level: {result}</AlertTitle>
-                    <AlertDescription className="mt-2">
-                        {result === 'Low' 
-                          ? "Your facial patterns appeared stable, suggesting a calm state. This is a positive sign of well-being."
-                          : "This non-medical estimation is based on facial cues processed locally on your device."
-                        }
-                    </AlertDescription>
-                </Alert>
+          <AnimatePresence>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+              <Card className="bg-background w-full">
+                <CardContent className="p-6 text-center">
+                    <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">Here’s What We Observed</h3>
+                    <Alert>
+                        <AlertTitle className="text-lg">Assessed Stress Level: {result}</AlertTitle>
+                        <AlertDescription className="mt-2">
+                            {result === 'Low' 
+                              ? "Your facial patterns appeared stable, suggesting a calm state. This is a positive sign of well-being."
+                              : "This non-medical estimation is based on facial cues processed locally on your device."
+                            }
+                        </AlertDescription>
+                    </Alert>
 
-                 {finalScores && (
-                    <Card className="mt-4 text-left">
-                        <CardHeader className="p-4">
-                            <CardTitle className="text-base">Key Signals</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-4 pt-0 space-y-3">
-                            <ScoreBar label="Eye Activity" score={finalScores.eye} icon={Eye} />
-                            <ScoreBar label="Brow Tension" score={finalScores.brow} icon={ChevronsUpDown} />
-                            <ScoreBar label="Jaw Clenching" score={finalScores.jaw} icon={Zap} />
-                            <ScoreBar label="Head Movement" score={finalScores.head} icon={BrainCircuit} />
-                        </CardContent>
-                    </Card>
-                )}
+                     {finalScores && (
+                        <Card className="mt-4 text-left">
+                            <CardHeader className="p-4">
+                                <CardTitle className="text-base">Key Signals</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0 space-y-3">
+                                <ScoreBar label="Eye Activity" score={finalScores.eye} icon={Eye} />
+                                <ScoreBar label="Brow Tension" score={finalScores.brow} icon={ChevronsUpDown} />
+                                <ScoreBar label="Jaw Clenching" score={finalScores.jaw} icon={Zap} />
+                                <ScoreBar label="Head Movement" score={finalScores.head} icon={BrainCircuit} />
+                            </CardContent>
+                        </Card>
+                    )}
 
-                <Alert variant="default" className="mt-4 text-left">
-                    <ShieldCheck className="h-4 w-4" />
-                    <AlertTitle>Your Privacy is Guaranteed</AlertTitle>
-                    <AlertDescription>
-                        Your camera has been turned off. No video data was recorded, stored, or sent from your device.
-                    </AlertDescription>
-                </Alert>
-                <Button onClick={requestPermissions} className="w-full mt-6">Run Analysis Again</Button>
-            </CardContent>
-          </Card>
+                    <Alert variant="default" className="mt-4 text-left">
+                        <ShieldCheck className="h-4 w-4" />
+                        <AlertTitle>Your Privacy is Guaranteed</AlertTitle>
+                        <AlertDescription>
+                            Your camera has been turned off. No video data was recorded, stored, or sent from your device.
+                        </AlertDescription>
+                    </Alert>
+                    <Button onClick={requestPermissions} className="w-full mt-6">Run Analysis Again</Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </AnimatePresence>
         );
       case 'error':
         return (
