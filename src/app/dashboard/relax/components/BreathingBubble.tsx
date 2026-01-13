@@ -28,7 +28,7 @@ const SESSION_DURATION = 2 * 60 * 1000; // 2 minutes in milliseconds
 const finalSize = 320;
 
 export function BreathingBubble() {
-  const [cycleIndex, setCycleIndex] = useState(0);
+  const [phase, setPhase] = useState<Phase>('inhale');
   const [isSessionActive, setIsSessionActive] = useState(true);
   const [count, setCount] = useState(1);
   const [completed, setCompleted] = useState(false);
@@ -37,7 +37,6 @@ export function BreathingBubble() {
   const [soundOn, setSoundOn] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [voiceOn, setVoiceOn] = useState(false);
-
 
   const toggleSound = async () => {
     if (!audioRef.current) {
@@ -91,28 +90,30 @@ export function BreathingBubble() {
     };
   }, []);
 
-  const currentPhase = breathingCycle[cycleIndex];
-  const phase: Phase = currentPhase.phase;
-
   useEffect(() => {
     if (!isSessionActive || completed) return;
 
     const cycleTimer = setTimeout(() => {
-      setCycleIndex((prevIndex) => (prevIndex + 1) % breathingCycle.length);
-    }, breathingCycle[cycleIndex].duration);
+       setPhase((prev) =>
+        prev === 'inhale' ? 'hold' :
+        prev === 'hold' ? 'exhale' :
+        'inhale'
+      );
+    }, 4000);
 
     return () => clearTimeout(cycleTimer);
-  }, [cycleIndex, isSessionActive, completed]);
+  }, [phase, completed, isSessionActive]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (isSessionActive && !completed) {
+      const intervalDuration = phase === 'hold' ? 4000 : 4000;
       timer = setInterval(() => {
         setCount((prev) => (prev === 4 ? 1 : prev + 1));
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [isSessionActive, completed]);
+  }, [isSessionActive, completed, phase]);
 
   useEffect(() => {
     if (!isSessionActive) return;
@@ -125,48 +126,21 @@ export function BreathingBubble() {
   }, [isSessionActive]);
 
   useEffect(() => {
-    if (!voiceEnabled || !voiceOn || completed) return;
+    if (!voiceOn || completed) return;
 
     if (phase === 'inhale') speak('Breathe in');
     if (phase === 'hold') speak('Hold');
     if (phase === 'exhale') speak('Breathe out');
-  }, [phase, voiceEnabled, voiceOn, completed]);
+  }, [phase, voiceOn, completed]);
   
   const handleRestart = () => {
-    setCycleIndex(0);
+    setPhase('inhale');
     setIsSessionActive(true);
     setCompleted(false);
   };
   
   return (
     <div className="relative flex flex-col items-center justify-center h-[60vh] bg-background overflow-hidden">
-        <button
-          onClick={() => {
-            if (!('speechSynthesis' in window)) {
-              alert('Speech API not supported');
-              return;
-            }
-
-            const u = new SpeechSynthesisUtterance('This is a voice test');
-            u.rate = 1;
-            u.pitch = 1;
-            u.volume = 1;
-
-            window.speechSynthesis.speak(u);
-            console.log('Speech triggered');
-          }}
-          style={{
-            position: 'fixed',
-            top: 20,
-            left: 20,
-            zIndex: 9999,
-            padding: '10px',
-            background: 'black',
-            color: 'white',
-          }}
-        >
-          TEST VOICE
-        </button>
         <div
             className={`absolute inset-0 transition-colors duration-[4000ms] ${
                 completed ? 'bg-emerald-50' : 'bg-background'
