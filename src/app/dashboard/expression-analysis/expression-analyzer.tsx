@@ -5,45 +5,34 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, Video, AlertTriangle, CheckCircle, ShieldCheck } from 'lucide-react';
-import { FaceMesh } from '@mediapipe/face_mesh';
-import '@mediapipe/camera_utils';
+import type { FaceMesh } from '@mediapipe/face_mesh';
 
 type Status = 'idle' | 'requesting' | 'ready' | 'analyzing' | 'success' | 'error';
 type StressLevel = 'Low' | 'Moderate' | 'High';
 
-// --- Client-Side Analysis Logic ---
-// This section contains the logic for analyzing video and audio streams directly in the browser.
-// No data is sent to any server.
+// This component performs all analysis on the client-side.
+// No video or audio data is ever sent to a server.
 
 /**
- * Analyzes facial landmarks to infer stress cues.
- * A simplified model for demonstration purposes.
+ * Analyzes facial landmarks to infer stress cues. A simplified model for demonstration.
  * @param landmarks The detected face landmarks from MediaPipe.
- * @returns A numeric stress score based on facial cues.
+ * @returns A numeric stress score.
  */
 function analyzeFacialCues(landmarks: any[]): number {
   if (!landmarks || landmarks.length === 0) return 0;
-
-  // Eye Aspect Ratio (EAR) for blink detection (simplified)
-  const leftEye = [33, 160, 158, 133, 153, 144];
-  const rightEye = [362, 385, 387, 263, 373, 380];
   const p = (p1: number, p2: number) => Math.hypot(landmarks[p1].x - landmarks[p2].x, landmarks[p1].y - landmarks[p2].y);
   
   const earLeft = (p(160, 144) + p(158, 153)) / (2 * p(33, 133));
   const earRight = (p(385, 380) + p(387, 373)) / (2 * p(362, 263));
   const avgEar = (earLeft + earRight) / 2;
 
-  // Eyebrow-to-eye distance (simplified)
   const leftBrowDist = p(105, 159);
   const rightBrowDist = p(334, 386);
   const avgBrowDist = (leftBrowDist + rightBrowDist) / 2;
 
   let score = 0;
-  // Lower EAR can indicate squinting or rapid blinking under stress.
-  if (avgEar < 0.25) score += 1;
-  // Lowered brows can indicate tension.
-  if (avgBrowDist < 0.06) score += 1;
-
+  if (avgEar < 0.25) score += 1; // Lower EAR can indicate squinting
+  if (avgBrowDist < 0.06) score += 1; // Lowered brows can indicate tension
   return score;
 }
 
@@ -56,43 +45,57 @@ export function ExpressionAnalyzer() {
   const streamRef = useRef<MediaStream | null>(null);
   const faceMeshRef = useRef<FaceMesh | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameId = useRef<number | null>(null);
+  const analysisTimeoutId = useRef<NodeJS.Timeout | null>(null);
+  const analysisIntervalId = useRef<NodeJS.Timeout | null>(null);
 
   /**
-   * Stops all media tracks (camera and microphone) and releases resources.
+   * Stops all media tracks (camera and microphone) and releases all resources.
    * This is a critical privacy and performance function.
    */
-  const stopMedia = useCallback(() => {
+  const stopMediaAndAnalysis = useCallback(() => {
+    // Stop the animation frame loop
     if (animationFrameId.current) {
       cancelAnimationFrame(animationFrameId.current);
       animationFrameId.current = null;
     }
+    // Stop the analysis timers
+    if (analysisTimeoutId.current) clearTimeout(analysisTimeoutId.current);
+    if (analysisIntervalId.current) clearInterval(analysisIntervalId.current);
+
+    // Stop all media tracks (camera & microphone)
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
+
+    // Release FaceMesh resources
     if (faceMeshRef.current) {
       faceMeshRef.current.close();
       faceMeshRef.current = null;
     }
+
+    // Close the audio context
     if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
         audioContextRef.current.close();
         audioContextRef.current = null;
     }
+    
+    // Clear the video element source
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
   }, []);
 
   /**
-   * Requests camera and microphone permissions from the user.
+   * Requests camera and microphone permissions and sets up the live preview.
    */
   const requestPermissions = async () => {
     setStatus('requesting');
     setError(null);
+    stopMediaAndAnalysis(); // Ensure everything is clean before starting
+    
     try {
-      // Get user media stream for both video and audio.
       const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       streamRef.current = mediaStream;
       if (videoRef.current) {
@@ -103,13 +106,12 @@ export function ExpressionAnalyzer() {
       console.error("Error accessing media devices.", err);
       setError("Permission denied. Please allow access to your camera and microphone in your browser settings.");
       setStatus('error');
-      stopMedia();
+      stopMediaAndAnalysis();
     }
   };
 
   /**
-   * Starts the analysis process, initializing FaceMesh and Web Audio API.
-   * The analysis runs for a short duration (5 seconds).
+   * Initializes FaceMesh and Web Audio API and starts the 5-second analysis.
    */
   const startAnalysis = useCallback(() => {
     if (!streamRef.current || !videoRef.current) return;
@@ -120,7 +122,7 @@ export function ExpressionAnalyzer() {
 
     const scores = { facial: [] as number[], audio: [] as number[] };
 
-    // --- Face Analysis Setup ---
+    // --- FaceMesh Setup (Client-Side) ---
     const faceMesh = new (window as any).FaceMesh({
       locateFile: (file: any) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
     });
@@ -138,69 +140,54 @@ export function ExpressionAnalyzer() {
     });
     faceMeshRef.current = faceMesh;
 
-    // --- Audio Analysis Setup ---
+    // --- Web Audio API Setup (Client-Side) ---
     const audioContext = new AudioContext();
     audioContextRef.current = audioContext;
     const source = audioContext.createMediaStreamSource(streamRef.current);
     const analyser = audioContext.createAnalyser();
     analyser.fftSize = 2048;
     source.connect(analyser);
-    analyserRef.current = analyser;
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
     const analyzeAudio = () => {
-      if (!analyserRef.current) return;
-      analyserRef.current.getByteFrequencyData(dataArray);
+      analyser.getByteFrequencyData(dataArray);
       const avgEnergy = dataArray.reduce((sum, val) => sum + val, 0) / dataArray.length;
-      // High energy can indicate a strained or louder voice under stress.
-      if (avgEnergy > 50) scores.audio.push(1);
-      else scores.audio.push(0);
+      if (avgEnergy > 50) scores.audio.push(1); else scores.audio.push(0);
     };
 
-    // --- Connect Camera to FaceMesh ---
-    const camera = new (window as any).Camera(videoRef.current, {
-      onFrame: async () => {
-        if (videoRef.current) {
-          await faceMesh.send({ image: videoRef.current });
-        }
-      },
-      width: 640,
-      height: 480,
-    });
-    camera.start();
+    // --- Main Processing Loop ---
+    const processFrame = async () => {
+      if (videoRef.current && faceMeshRef.current && status === 'analyzing') {
+        await faceMeshRef.current.send({ image: videoRef.current });
+        animationFrameId.current = requestAnimationFrame(processFrame);
+      }
+    };
+    processFrame();
+    
+    // --- Run Analysis for 5 Seconds ---
+    analysisIntervalId.current = setInterval(analyzeAudio, 500);
+    analysisTimeoutId.current = setTimeout(() => {
+      stopMediaAndAnalysis();
 
-    // Run analysis for 5 seconds
-    const analysisInterval = setInterval(analyzeAudio, 500);
-    setTimeout(() => {
-      clearInterval(analysisInterval);
-      
-      // Stop all media and processing
-      stopMedia();
-      camera.stop();
-
-      // --- Final Stress Calculation ---
       const avgFacialScore = scores.facial.reduce((a, b) => a + b, 0) / (scores.facial.length || 1);
       const avgAudioScore = scores.audio.reduce((a, b) => a + b, 0) / (scores.audio.length || 1);
       const totalScore = avgFacialScore + avgAudioScore;
       
       let finalResult: StressLevel = 'Low';
-      if (totalScore > 1.5) {
-        finalResult = 'High';
-      } else if (totalScore > 0.5) {
-        finalResult = 'Moderate';
-      }
+      if (totalScore > 1.5) finalResult = 'High';
+      else if (totalScore > 0.5) finalResult = 'Moderate';
 
       setResult(finalResult);
       setStatus('success');
 
     }, 5000);
 
-  }, [stopMedia]);
+  }, [stopMediaAndAnalysis, status]);
 
   // Cleanup effect to stop media when the component unmounts.
   useEffect(() => {
-    return () => stopMedia();
-  }, [stopMedia]);
+    return () => stopMediaAndAnalysis();
+  }, [stopMediaAndAnalysis]);
   
   const renderContent = () => {
     switch (status) {
