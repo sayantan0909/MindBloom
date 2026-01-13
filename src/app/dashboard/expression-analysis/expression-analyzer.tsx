@@ -7,7 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, Video, AlertTriangle, CheckCircle, ShieldCheck } from 'lucide-react';
 import type { FaceMesh } from '@mediapipe/face_mesh';
 
-type Status = 'idle' | 'requesting' | 'ready' | 'analyzing' | 'success' | 'error';
+type Status = 'idle' | 'requesting' | 'ready' | 'baseline' | 'analyzing' | 'success' | 'error';
 type StressLevel = 'Low' | 'Moderate' | 'High';
 
 // This component performs all analysis on the client-side.
@@ -22,17 +22,19 @@ function analyzeFacialCues(landmarks: any[]): number {
   if (!landmarks || landmarks.length === 0) return 0;
   const p = (p1: number, p2: number) => Math.hypot(landmarks[p1].x - landmarks[p2].x, landmarks[p1].y - landmarks[p2].y);
   
+  // Lower Eye Aspect Ratio (EAR) can indicate squinting or tension
   const earLeft = (p(160, 144) + p(158, 153)) / (2 * p(33, 133));
   const earRight = (p(385, 380) + p(387, 373)) / (2 * p(362, 263));
   const avgEar = (earLeft + earRight) / 2;
 
+  // Distance between eyebrows can indicate furrowing
   const leftBrowDist = p(105, 159);
   const rightBrowDist = p(334, 386);
   const avgBrowDist = (leftBrowDist + rightBrowDist) / 2;
 
   let score = 0;
-  if (avgEar < 0.25) score += 1; // Lower EAR can indicate squinting
-  if (avgBrowDist < 0.06) score += 1; // Lowered brows can indicate tension
+  if (avgEar < 0.25) score += 1; // Squinting/tension cue
+  if (avgBrowDist < 0.06) score += 1; // Furrowed brow cue
   return score;
 }
 
@@ -46,8 +48,8 @@ export function ExpressionAnalyzer() {
   const faceMeshRef = useRef<FaceMesh | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const animationFrameId = useRef<number | null>(null);
-  const analysisTimeoutId = useRef<NodeJS.Timeout | null>(null);
-  const analysisIntervalId = useRef<NodeJS.Timeout | null>(null);
+  
+  const analysisTimers = useRef<NodeJS.Timeout[]>([]);
 
   /**
    * Stops all media tracks (camera and microphone) and releases all resources.
@@ -59,9 +61,9 @@ export function ExpressionAnalyzer() {
       cancelAnimationFrame(animationFrameId.current);
       animationFrameId.current = null;
     }
-    // Stop the analysis timers
-    if (analysisTimeoutId.current) clearTimeout(analysisTimeoutId.current);
-    if (analysisIntervalId.current) clearInterval(analysisIntervalId.current);
+    // Clear all scheduled timers
+    analysisTimers.current.forEach(clearTimeout);
+    analysisTimers.current = [];
 
     // Stop all media tracks (camera & microphone)
     if (streamRef.current) {
@@ -100,8 +102,13 @@ export function ExpressionAnalyzer() {
       streamRef.current = mediaStream;
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        // Wait for video to start playing before setting status to ready
+        videoRef.current.onloadedmetadata = () => {
+            setStatus('ready');
+        };
+      } else {
+        setStatus('ready');
       }
-      setStatus('ready');
     } catch (err) {
       console.error("Error accessing media devices.", err);
       setError("Permission denied. Please allow access to your camera and microphone in your browser settings.");
@@ -111,7 +118,7 @@ export function ExpressionAnalyzer() {
   };
 
   /**
-   * Initializes FaceMesh and Web Audio API and starts the 5-second analysis.
+   * Initializes FaceMesh and Web Audio API and starts the multi-stage analysis.
    */
   const startAnalysis = useCallback(() => {
     if (!streamRef.current || !videoRef.current || !(window as any).FaceMesh) {
@@ -120,7 +127,6 @@ export function ExpressionAnalyzer() {
       return;
     };
     
-    setStatus('analyzing');
     setResult(null);
     setError(null);
 
@@ -137,10 +143,11 @@ export function ExpressionAnalyzer() {
       minTrackingConfidence: 0.5,
     });
     faceMesh.onResults((results: any) => {
-      if (results.multiFaceLandmarks && results.multiFaceLandmarks[0]) {
-        const facialScore = analyzeFacialCues(results.multiFaceLandmarks[0]);
-        scores.facial.push(facialScore);
-      }
+        // Only collect scores during the 'analyzing' phase
+        if (status === 'analyzing' && results.multiFaceLandmarks && results.multiFaceLandmarks[0]) {
+            const facialScore = analyzeFacialCues(results.multiFaceLandmarks[0]);
+            scores.facial.push(facialScore);
+        }
     });
     faceMeshRef.current = faceMesh;
 
@@ -154,43 +161,62 @@ export function ExpressionAnalyzer() {
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
     const analyzeAudio = () => {
-      analyser.getByteFrequencyData(dataArray);
-      const avgEnergy = dataArray.reduce((sum, val) => sum + val, 0) / dataArray.length;
-      if (avgEnergy > 50) scores.audio.push(1); else scores.audio.push(0);
+      // Only collect scores during the 'analyzing' phase
+      if (status === 'analyzing') {
+        analyser.getByteFrequencyData(dataArray);
+        const avgEnergy = dataArray.reduce((sum, val) => sum + val, 0) / dataArray.length;
+        if (avgEnergy > 50) scores.audio.push(1); // Elevated vocal energy cue
+        else scores.audio.push(0);
+      }
     };
+    const audioInterval = setInterval(analyzeAudio, 500);
 
     // --- Main Processing Loop ---
     const processFrame = async () => {
-      if (videoRef.current && faceMeshRef.current && status === 'analyzing') {
+      if (videoRef.current && faceMeshRef.current && (status === 'baseline' || status === 'analyzing')) {
         await faceMeshRef.current.send({ image: videoRef.current });
         animationFrameId.current = requestAnimationFrame(processFrame);
       }
     };
-    processFrame();
-    
-    // --- Run Analysis for 5 Seconds ---
-    analysisIntervalId.current = setInterval(analyzeAudio, 500);
-    analysisTimeoutId.current = setTimeout(() => {
-      stopMediaAndAnalysis();
 
-      const avgFacialScore = scores.facial.reduce((a, b) => a + b, 0) / (scores.facial.length || 1);
-      const avgAudioScore = scores.audio.reduce((a, b) => a + b, 0) / (scores.audio.length || 1);
-      const totalScore = avgFacialScore + avgAudioScore;
-      
-      let finalResult: StressLevel = 'Low';
-      if (totalScore > 1.5) finalResult = 'High';
-      else if (totalScore > 0.5) finalResult = 'Moderate';
+    // --- Staged Analysis Flow ---
+    setStatus('baseline'); // Stage 1: Baseline
+    processFrame(); // Start processing video frames
 
-      setResult(finalResult);
-      setStatus('success');
+    const baselineTimer = setTimeout(() => {
+        setStatus('analyzing'); // Stage 2: Analysis
 
-    }, 5000);
+        const analysisTimer = setTimeout(() => {
+            clearInterval(audioInterval); // Stop audio analysis
+            stopMediaAndAnalysis(); // Stop camera, mic, and video processing
+
+            const avgFacialScore = scores.facial.reduce((a, b) => a + b, 0) / (scores.facial.length || 1);
+            const avgAudioScore = scores.audio.reduce((a, b) => a + b, 0) / (scores.audio.length || 1);
+            const totalScore = avgFacialScore + avgAudioScore;
+            
+            let finalResult: StressLevel = 'Low';
+            if (totalScore > 1.2) finalResult = 'High';
+            else if (totalScore > 0.4) finalResult = 'Moderate';
+
+            setResult(finalResult);
+            setStatus('success'); // Stage 3: Success
+
+        }, 7000); // 7-second analysis period
+        analysisTimers.current.push(analysisTimer);
+
+    }, 3000); // 3-second baseline period
+    analysisTimers.current.push(baselineTimer);
+
 
   }, [stopMediaAndAnalysis, status]);
 
   // Cleanup effect to stop media when the component unmounts.
   useEffect(() => {
-    return () => stopMediaAndAnalysis();
+    return () => {
+        stopMediaAndAnalysis();
+        if(animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
+        analysisTimers.current.forEach(clearTimeout);
+    }
   }, [stopMediaAndAnalysis]);
   
   const renderContent = () => {
@@ -214,8 +240,18 @@ export function ExpressionAnalyzer() {
             <div className="flex flex-col items-center gap-4 text-center">
                 <p className="mb-2 text-muted-foreground">Permissions granted. Click "Start Analysis" to begin.</p>
                 <video ref={videoRef} autoPlay muted playsInline className="w-full max-w-md rounded-lg aspect-video bg-black" />
-                <Button onClick={startAnalysis}>Start Analysis (5 seconds)</Button>
+                <Button onClick={startAnalysis}>Start Analysis</Button>
             </div>
+        );
+      case 'baseline':
+        return (
+          <div className="flex flex-col items-center gap-4">
+            <video ref={videoRef} autoPlay muted playsInline className="w-full max-w-md rounded-lg aspect-video bg-black" />
+            <div className="flex items-center text-primary font-semibold">
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Establishing baseline (3 seconds)...
+            </div>
+          </div>
         );
       case 'analyzing':
         return (
@@ -223,7 +259,7 @@ export function ExpressionAnalyzer() {
             <video ref={videoRef} autoPlay muted playsInline className="w-full max-w-md rounded-lg aspect-video bg-black" />
             <div className="flex items-center text-primary font-semibold">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Analyzing your expression on-device for 5 seconds...
+              Analyzing your expression on-device (7 seconds)...
             </div>
           </div>
         );
