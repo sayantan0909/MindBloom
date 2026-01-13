@@ -46,33 +46,42 @@ export function ExpressionAnalyzer() {
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const { toast } = useToast();
 
+  const handleResults = useRef<(results: any) => void>(() => {});
+
   useEffect(() => {
     let cancelled = false;
 
     async function loadFaceMesh() {
-      try {
-        const mp = await import('@mediapipe/face_mesh');
-        if (cancelled) return;
+      // Load script dynamically from CDN
+      await new Promise<void>((resolve) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js';
+        script.crossOrigin = 'anonymous';
+        script.onload = () => resolve();
+        document.body.appendChild(script);
+      });
 
-        const mesh = new mp.FaceMesh({
-          locateFile: (file: string) =>
-            `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
-        });
+      if (cancelled) return;
+      
+      console.log('FaceMesh loaded');
 
-        mesh.setOptions({
-          maxNumFaces: 1,
-          refineLandmarks: true,
-          minDetectionConfidence: 0.5,
-          minTrackingConfidence: 0.5,
-        });
+      // @ts-ignore
+      const mesh = new window.FaceMesh({
+        locateFile: (file: string) =>
+          `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+      });
 
-        faceMeshRef.current = mesh;
-        setLibraryReady(true);
-      } catch (e) {
-        console.error("Failed to load MediaPipe FaceMesh module", e);
-        setError("Failed to load analysis library. Please check your network connection and try again.");
-        setPhase('error');
-      }
+      mesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+      });
+      
+      mesh.onResults((results: any) => handleResults.current(results));
+
+      faceMeshRef.current = mesh;
+      setLibraryReady(true);
     }
 
     loadFaceMesh();
@@ -147,7 +156,7 @@ export function ExpressionAnalyzer() {
     
     let scoresBuffer: number[] = [];
     
-    const onResults = (results: any) => {
+    handleResults.current = (results: any) => {
         if (!results.multiFaceLandmarks || !results.multiFaceLandmarks[0] || !videoRef.current) return;
 
         const landmarks = results.multiFaceLandmarks[0];
@@ -193,8 +202,6 @@ export function ExpressionAnalyzer() {
             if (scoresBuffer.length > 6) scoresBuffer.shift(); 
         }
     };
-
-    faceMeshRef.current.onResults(onResults);
 
     const processFrame = async () => {
       if (videoRef.current && faceMeshRef.current && ['baseline', 'analyzing'].includes(phase)) {
