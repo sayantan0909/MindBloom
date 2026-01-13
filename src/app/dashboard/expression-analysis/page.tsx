@@ -1,12 +1,8 @@
+'use client';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { HeartPulse } from "lucide-react";
-import dynamic from "next/dynamic";
-
-const ExpressionAnalyzer = dynamic(
-    () => import('./expression-analyzer').then(mod => mod.ExpressionAnalyzer),
-    { ssr: false }
-);
-
+import { ExpressionAnalyzer } from './expression-analyzer';
 
 export default function ExpressionAnalysisPage() {
   return (
