@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertTriangle, CheckCircle, ShieldCheck, Eye, ChevronsUpDown, Zap, BrainCircuit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -270,7 +270,9 @@ export function ExpressionAnalyzer() {
         return (
           <div className="text-center">
             <p className="mb-4 text-muted-foreground">Click the button below to start the on-device analysis.</p>
-            <Button onClick={requestPermissions}>Enable Camera</Button>
+            <Button onClick={requestPermissions} disabled={!libraryReady}>
+              {libraryReady ? 'Enable Camera' : <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading Engine...</>}
+            </Button>
           </div>
         );
       case 'requesting':
