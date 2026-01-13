@@ -83,6 +83,9 @@ export function ExpressionAnalyzer() {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
         mediaStreamRef.current = stream;
         
+        console.log('Stream:', mediaStreamRef.current);
+        console.log('Video:', videoRef.current);
+
         const video = videoRef.current;
         if (!video) {
             console.error('Video element not found.');
