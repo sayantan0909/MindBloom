@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { FloatingSoundControl } from './FloatingSoundControl';
 
@@ -24,6 +24,7 @@ const SESSION_DURATION = 2 * 60 * 1000; // 2 minutes in milliseconds
 export function BreathingBubble() {
   const [cycleIndex, setCycleIndex] = useState(0);
   const [isSessionActive, setIsSessionActive] = useState(true);
+  const [count, setCount] = useState(1);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [soundOn, setSoundOn] = useState(false);
@@ -46,13 +47,16 @@ export function BreathingBubble() {
       console.error('Audio blocked:', e);
     }
   };
-
+  
   useEffect(() => {
     return () => {
       audioRef.current?.pause();
       audioRef.current = null;
     };
   }, []);
+
+  const currentPhase = breathingCycle[cycleIndex];
+  const phase: Phase = currentPhase.phase;
 
   useEffect(() => {
     if (!isSessionActive) return;
@@ -63,6 +67,14 @@ export function BreathingBubble() {
 
     return () => clearTimeout(cycleTimer);
   }, [cycleIndex, isSessionActive]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCount((prev) => (prev === 4 ? 1 : prev + 1));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [phase]);
 
   useEffect(() => {
     if (!isSessionActive) return;
@@ -78,9 +90,6 @@ export function BreathingBubble() {
     setIsSessionActive(true);
   };
 
-  const currentPhase = breathingCycle[cycleIndex];
-  const phase: Phase = currentPhase.phase;
-
   return (
     <div className="relative flex flex-col items-center justify-center h-[60vh] bg-background">
       <FloatingSoundControl soundOn={soundOn} toggle={toggleSound} />
@@ -94,7 +103,7 @@ export function BreathingBubble() {
             transition={{ duration: 0.8, ease: 'easeOut' }}
             className="flex flex-col items-center justify-center"
           >
-            <div className="w-[380px] h-[380px] flex items-center justify-center">
+            <div className="w-[380px] h-[380px] flex items-center justify-center relative">
                 <div
                     className={`rounded-full bg-gradient-to-br ${phaseStyles[phase]}
                                 transition-all duration-[4000ms] ease-in-out`}
@@ -103,17 +112,15 @@ export function BreathingBubble() {
                         height: phase === 'inhale' ? 380 : phase === 'hold' ? 380 : 240,
                     }}
                 />
+                <div className="absolute text-6xl font-light text-white/90">
+                    {count}
+                </div>
             </div>
-            <motion.p
-              key={currentPhase.text}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.5 }}
-              className="mt-12 text-2xl font-semibold text-muted-foreground"
-            >
-              {currentPhase.text}
-            </motion.p>
+            <p className="mt-12 text-2xl font-semibold text-muted-foreground">
+                {phase === 'inhale' && 'Breathe in'}
+                {phase === 'hold' && 'Hold'}
+                {phase === 'exhale' && 'Breathe out'}
+            </p>
           </motion.div>
         ) : (
           <motion.div
