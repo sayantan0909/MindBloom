@@ -14,13 +14,11 @@ const breathingCycle = [
 ];
 
 const SESSION_DURATION = 2 * 60 * 1000; // 2 minutes in milliseconds
-const AMBIENT_SOUND_SRC = '/sounds/breathing-deep-and-calm-102981.mp3';
-
 
 export function BreathingBubble() {
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [isSessionActive, setIsSessionActive] = useState(true);
-  const { isSoundOn, toggleSound } = useCalmSound(AMBIENT_SOUND_SRC);
+  const { isSoundOn, toggleSound } = useCalmSound('/sounds/breathing-deep-and-calm-102981.mp3');
 
   // Effect to manage the breathing cycle
   useEffect(() => {

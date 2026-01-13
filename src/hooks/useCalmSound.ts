@@ -6,8 +6,8 @@ export function useCalmSound(soundSrc: string) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isSoundOn, setIsSoundOn] = useState(false);
 
+  // Effect to handle cleanup on unmount
   useEffect(() => {
-    // This effect now only handles cleanup on unmount
     const audio = audioRef.current;
     return () => {
       audio?.pause();
@@ -15,6 +15,7 @@ export function useCalmSound(soundSrc: string) {
   }, []);
 
   const toggleSound = async () => {
+    // Lazily create the Audio object on first interaction
     if (!audioRef.current) {
       audioRef.current = new Audio(soundSrc);
       audioRef.current.loop = true;
@@ -27,12 +28,14 @@ export function useCalmSound(soundSrc: string) {
       if (isSoundOn) {
         audio.pause();
       } else {
+        // Must await play() as it returns a promise
         await audio.play();
       }
+      // Only toggle state if the action was successful
       setIsSoundOn(prev => !prev);
     } catch (err) {
-      console.error('Audio play failed:', err);
-      // If play fails, ensure state is set to off
+      console.error('Audio play failed. User may need to interact with the page first.', err);
+      // If play fails, ensure our state is correct (sound is off)
       setIsSoundOn(false);
     }
   };

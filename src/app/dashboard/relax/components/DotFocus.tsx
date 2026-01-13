@@ -5,10 +5,8 @@ import { useCalmSound } from '@/hooks/useCalmSound';
 import { Button } from '@/components/ui/button';
 import { Volume2, VolumeX } from 'lucide-react';
 
-const AMBIENT_SOUND_SRC = '/sounds/calm-and-peaceful-ambient-music-60-second-version-183030.mp3';
-
 export function DotFocus() {
-  const { isSoundOn, toggleSound } = useCalmSound(AMBIENT_SOUND_SRC);
+  const { isSoundOn, toggleSound } = useCalmSound('/sounds/calm-and-peaceful-ambient-music-60-second-version-183030.mp3');
 
   return (
     <div className="relative flex flex-col items-center justify-center w-full h-[60vh] bg-background overflow-hidden">

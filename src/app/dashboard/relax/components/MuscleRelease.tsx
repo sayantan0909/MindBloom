@@ -17,11 +17,9 @@ const steps = [
   { text: 'Exercise complete. You can return or restart.', duration: Infinity },
 ];
 
-const AMBIENT_SOUND_SRC = '/sounds/calm-river-ambience-loop-1-182375.mp3';
-
 export function MuscleRelease() {
   const [currentStep, setCurrentStep] = useState(0);
-  const { isSoundOn, toggleSound } = useCalmSound(AMBIENT_SOUND_SRC);
+  const { isSoundOn, toggleSound } = useCalmSound('/sounds/calm-river-ambience-loop-1-182375.mp3');
 
   useEffect(() => {
     if (currentStep < steps.length - 1) {
