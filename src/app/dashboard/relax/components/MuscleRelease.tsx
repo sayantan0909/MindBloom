@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { useCalmSound } from '@/hooks/useCalmSound';
 import { Volume2, VolumeX } from 'lucide-react';
 
 const steps = [
@@ -19,7 +18,29 @@ const steps = [
 
 export function MuscleRelease() {
   const [currentStep, setCurrentStep] = useState(0);
-  const { isSoundOn, toggleSound } = useCalmSound('/sounds/calm-river-ambience-loop-1-182375.mp3');
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isSoundOn, setIsSoundOn] = useState(false);
+
+  const toggleSound = async () => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio('/sounds/calm-river-ambience-loop-1-182375.mp3');
+      audioRef.current.loop = true;
+      audioRef.current.volume = 0.3;
+    }
+
+     try {
+        if (isSoundOn) {
+            audioRef.current.pause();
+        } else {
+            await audioRef.current.play();
+        }
+        setIsSoundOn(!isSoundOn);
+    } catch(e) {
+        console.error("Audio play failed:", e);
+        setIsSoundOn(false);
+    }
+  };
 
   useEffect(() => {
     if (currentStep < steps.length - 1) {
@@ -30,6 +51,14 @@ export function MuscleRelease() {
       return () => clearTimeout(timer);
     }
   }, [currentStep]);
+  
+  // Effect to clean up audio on unmount
+  useEffect(() => {
+    const audio = audioRef.current;
+    return () => {
+      audio?.pause();
+    }
+  }, []);
 
   return (
     <div className="relative flex flex-col items-center justify-center h-[60vh] bg-background text-center p-4">

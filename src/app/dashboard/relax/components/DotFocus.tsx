@@ -1,12 +1,41 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useCalmSound } from '@/hooks/useCalmSound';
 import { Button } from '@/components/ui/button';
 import { Volume2, VolumeX } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 
 export function DotFocus() {
-  const { isSoundOn, toggleSound } = useCalmSound('/sounds/calm-and-peaceful-ambient-music-60-second-version-183030.mp3');
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isSoundOn, setIsSoundOn] = useState(false);
+
+  const toggleSound = async () => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio('/sounds/calm-and-peaceful-ambient-music-60-second-version-183030.mp3');
+      audioRef.current.loop = true;
+      audioRef.current.volume = 0.3;
+    }
+    
+     try {
+        if (isSoundOn) {
+            audioRef.current.pause();
+        } else {
+            await audioRef.current.play();
+        }
+        setIsSoundOn(!isSoundOn);
+    } catch(e) {
+        console.error("Audio play failed:", e);
+        setIsSoundOn(false);
+    }
+  };
+
+  // Effect to clean up audio on unmount
+  useEffect(() => {
+    const audio = audioRef.current;
+    return () => {
+      audio?.pause();
+    }
+  }, []);
 
   return (
     <div className="relative flex flex-col items-center justify-center w-full h-[60vh] bg-background overflow-hidden">

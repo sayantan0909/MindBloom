@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { useCalmSound } from '@/hooks/useCalmSound';
 import { Volume2, VolumeX } from 'lucide-react';
 
 // Define the phases of the breathing cycle
@@ -18,7 +17,29 @@ const SESSION_DURATION = 2 * 60 * 1000; // 2 minutes in milliseconds
 export function BreathingBubble() {
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [isSessionActive, setIsSessionActive] = useState(true);
-  const { isSoundOn, toggleSound } = useCalmSound('/sounds/breathing-deep-and-calm-102981.mp3');
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isSoundOn, setIsSoundOn] = useState(false);
+
+  const toggleSound = async () => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio('/sounds/breathing-deep-and-calm-102981.mp3');
+      audioRef.current.loop = true;
+      audioRef.current.volume = 0.3;
+    }
+
+    try {
+        if (isSoundOn) {
+            audioRef.current.pause();
+        } else {
+            await audioRef.current.play();
+        }
+        setIsSoundOn(!isSoundOn);
+    } catch(e) {
+        console.error("Audio play failed:", e);
+        setIsSoundOn(false);
+    }
+  };
 
   // Effect to manage the breathing cycle
   useEffect(() => {
@@ -41,6 +62,14 @@ export function BreathingBubble() {
 
     return () => clearTimeout(sessionTimer);
   }, [isSessionActive]);
+  
+  // Effect to clean up audio on unmount
+  useEffect(() => {
+    const audio = audioRef.current;
+    return () => {
+      audio?.pause();
+    }
+  }, []);
 
   const handleRestart = () => {
     setPhaseIndex(0);
