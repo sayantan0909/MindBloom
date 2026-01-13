@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { FloatingSoundControl } from './FloatingSoundControl';
 
@@ -77,12 +77,14 @@ export function BreathingBubble() {
   }, [cycleIndex, isSessionActive, completed]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCount((prev) => (prev === 4 ? 1 : prev + 1));
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [phase]);
+    let timer: NodeJS.Timeout;
+    if (isSessionActive) {
+      timer = setInterval(() => {
+        setCount((prev) => (prev === 4 ? 1 : prev + 1));
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [isSessionActive, phase]);
 
   useEffect(() => {
     if (!isSessionActive) return;
@@ -100,10 +102,6 @@ export function BreathingBubble() {
     setCompleted(false);
   };
   
-  const arrow = phase === 'inhale' ? '↑'
-            : phase === 'exhale' ? '↓'
-            : '•';
-
   return (
     <div className="relative flex flex-col items-center justify-center h-[60vh] bg-background overflow-hidden">
         <div
@@ -126,21 +124,28 @@ export function BreathingBubble() {
                     }}
                 >
                     {!completed && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <div className="text-6xl text-white/90">{arrow}</div>
-                            <div className="text-5xl font-light text-white/90 mt-2">{count}</div>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center">
+                            <div className="text-5xl text-white/90">
+                                {phase === 'inhale' && '↑'}
+                                {phase === 'hold' && '•'}
+                                {phase === 'exhale' && '↓'}
+                            </div>
+
+                            <div className="text-6xl font-light text-white/90">
+                                {count}
+                            </div>
+
+                            <div className="text-lg text-white/80 tracking-wide">
+                                {phase === 'inhale' && 'Breathe in'}
+                                {phase === 'hold' && 'Hold'}
+                                {phase === 'exhale' && 'Breathe out'}
+                            </div>
                         </div>
                     )}
                 </div>
             </div>
 
-            {!completed ? (
-                <p className="mt-6 text-lg text-muted-foreground z-10">
-                    {phase === 'inhale' && 'Breathe in'}
-                    {phase === 'hold' && 'Hold'}
-                    {phase === 'exhale' && 'Breathe out'}
-                </p>
-            ) : (
+            {completed && (
                 <div className="mt-8 text-center animate-fade-in z-10">
                     <p className="text-xl font-medium text-emerald-700">
                         Breathing session complete
