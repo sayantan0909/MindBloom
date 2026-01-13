@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -34,7 +35,9 @@ export function BreathingBubble() {
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [soundOn, setSoundOn] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [voiceOn, setVoiceOn] = useState(false);
+
 
   const toggleSound = async () => {
     if (!audioRef.current) {
@@ -55,17 +58,29 @@ export function BreathingBubble() {
     }
   };
 
-  const speak = (text: string) => {
+  const enableVoice = () => {
     if (!('speechSynthesis' in window)) return;
+  
+    // This "silent" utterance is a trick to unlock speech synthesis on mobile browsers
+    const unlock = new SpeechSynthesisUtterance('Voice guidance enabled');
+    unlock.volume = 0; 
+    window.speechSynthesis.speak(unlock);
+  
+    setVoiceEnabled(true);
+    setVoiceOn(true); // Automatically turn on voice once enabled
+  };
 
-    window.speechSynthesis.cancel(); // stop previous speech
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.85;   // slower, calming
-    utterance.pitch = 1.0;
-    utterance.volume = 0.8;
-
-    window.speechSynthesis.speak(utterance);
+  const speak = (text: string) => {
+    if (!voiceEnabled || !voiceOn) return;
+  
+    window.speechSynthesis.cancel();
+  
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 0.85;
+    u.pitch = 1;
+    u.volume = 1;
+  
+    window.speechSynthesis.speak(u);
   };
   
   useEffect(() => {
@@ -91,13 +106,13 @@ export function BreathingBubble() {
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (isSessionActive) {
+    if (isSessionActive && !completed) {
       timer = setInterval(() => {
         setCount((prev) => (prev === 4 ? 1 : prev + 1));
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [isSessionActive, phase]);
+  }, [isSessionActive, completed]);
 
   useEffect(() => {
     if (!isSessionActive) return;
@@ -110,12 +125,12 @@ export function BreathingBubble() {
   }, [isSessionActive]);
 
   useEffect(() => {
-    if (!voiceOn || completed) return;
+    if (!voiceEnabled || !voiceOn || completed) return;
 
     if (phase === 'inhale') speak('Breathe in');
     if (phase === 'hold') speak('Hold');
     if (phase === 'exhale') speak('Breathe out');
-  }, [phase, voiceOn, completed]);
+  }, [phase, voiceEnabled, voiceOn, completed]);
   
   const handleRestart = () => {
     setCycleIndex(0);
@@ -131,13 +146,25 @@ export function BreathingBubble() {
             }`}
         />
       <FloatingSoundControl soundOn={soundOn} toggle={toggleSound} />
-      <button
-        onClick={() => setVoiceOn(!voiceOn)}
-        className="fixed bottom-20 right-6 z-50 rounded-full
-                    bg-white/90 px-4 py-2 shadow backdrop-blur"
-        >
-        {voiceOn ? '🗣️ Voice On' : '🔇 Voice Off'}
+      
+      {!voiceEnabled ? (
+         <button
+            onClick={enableVoice}
+            className="fixed bottom-20 right-6 z-50 rounded-full
+                       bg-white/90 px-4 py-2 shadow backdrop-blur"
+          >
+            🗣 Enable Voice
+          </button>
+      ) : (
+        <button
+            onClick={() => setVoiceOn(!voiceOn)}
+            className="fixed bottom-20 right-6 z-50 rounded-full
+                      bg-white/90 px-4 py-2 shadow backdrop-blur"
+            >
+            {voiceOn ? '🗣️ Voice On' : '🔇 Voice Off'}
         </button>
+      )}
+
         <div className="relative flex flex-col items-center justify-center">
             <div className="w-[420px] h-[420px] flex items-center justify-center relative">
                 <div
