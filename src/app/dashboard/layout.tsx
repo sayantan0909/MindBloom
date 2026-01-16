@@ -16,48 +16,48 @@ import { SidebarNav } from '@/components/sidebar-nav';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuPortal, DropdownMenuSubContent } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
-import { useAuth, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { logout } from '@/lib/auth';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useMouseTrail } from '@/hooks/use-mouse-trail';
+import { useSupabaseUser } from '@/hooks/useSupabaseUser';
+import { supabase } from '@/lib/supabaseClient';
+import { UserProfileModal } from '@/components/dashboard/user-profile-modal';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isUserLoading, userError } = useUser();
-  const auth = useAuth();
+  const { user, loading } = useSupabaseUser();
   const router = useRouter();
   const { isEnabled: isTrailEnabled, setIsEnabled: setTrailEnabled } = useMouseTrail();
 
   useEffect(() => {
-    if (!isUserLoading && !user) {
+    if (!loading && !user) {
       router.push('/');
     }
-  }, [user, isUserLoading, router]);
-  
+  }, [user, loading, router]);
+
   const handleLogout = async () => {
-    await logout(auth);
+    await supabase.auth.signOut();
     router.push('/');
   };
 
-  if (isUserLoading || !user) {
-     return (
+  if (loading || !user) {
+    return (
       <div className="flex min-h-screen w-full">
         <div className="hidden md:block border-r p-4">
-            <Skeleton className="h-10 w-48 mb-4" />
-            <div className="space-y-2">
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-            </div>
+          <Skeleton className="h-10 w-48 mb-4" />
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+          </div>
         </div>
         <div className="flex-1">
           <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
@@ -68,9 +68,9 @@ export default function DashboardLayout({
           <main className="p-6">
             <Skeleton className="h-40 w-full mb-6" />
             <div className="grid grid-cols-3 gap-6">
-                <Skeleton className="h-40 w-full" />
-                <Skeleton className="h-40 w-full" />
-                <Skeleton className="h-40 w-full" />
+              <Skeleton className="h-40 w-full" />
+              <Skeleton className="h-40 w-full" />
+              <Skeleton className="h-40 w-full" />
             </div>
           </main>
         </div>
@@ -93,7 +93,7 @@ export default function DashboardLayout({
           <SidebarNav />
         </SidebarContent>
         <SidebarFooter className="p-4">
-           <Button variant="outline" className="justify-start gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8" asChild>
+          <Button variant="outline" className="justify-start gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8" asChild>
             <Link href="#">
               <MessageSquareWarning />
               <span className="group-data-[collapsible=icon]:hidden">Crisis Support</span>
@@ -116,7 +116,7 @@ export default function DashboardLayout({
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.photoURL || `https://picsum.photos/seed/${user.uid}/100/100`} alt={user.displayName || 'User'} />
+                    <AvatarImage src={user.user_metadata?.avatar_url || `https://picsum.photos/seed/${user.id}/100/100`} alt={user.user_metadata?.full_name || 'User'} />
                     <AvatarFallback>{user.email?.charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
                 </Button>
@@ -124,7 +124,7 @@ export default function DashboardLayout({
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.displayName || 'Student'}</p>
+                    <p className="text-sm font-medium leading-none">{user.user_metadata?.full_name || 'Member'}</p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {user.email}
                     </p>
@@ -135,7 +135,7 @@ export default function DashboardLayout({
                   <UserIcon className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
-                 <DropdownMenuSub>
+                <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
@@ -144,11 +144,11 @@ export default function DashboardLayout({
                     <DropdownMenuSubContent>
                       <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                         <div className="flex items-center justify-between w-full">
-                           <Label htmlFor="mouse-trail" className="flex items-center gap-2 cursor-pointer">
+                          <Label htmlFor="mouse-trail" className="flex items-center gap-2 cursor-pointer">
                             <Sparkles className="h-4 w-4" />
                             Mouse Trail
-                           </Label>
-                          <Switch id="mouse-trail" checked={isTrailEnabled} onCheckedChange={setTrailEnabled}/>
+                          </Label>
+                          <Switch id="mouse-trail" checked={isTrailEnabled} onCheckedChange={setTrailEnabled} />
                         </div>
                       </DropdownMenuItem>
                     </DropdownMenuSubContent>
@@ -156,8 +156,8 @@ export default function DashboardLayout({
                 </DropdownMenuSub>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -165,6 +165,7 @@ export default function DashboardLayout({
         </header>
         <main className="flex-1 p-4 sm:p-6 bg-background">
           {children}
+          <UserProfileModal />
         </main>
       </SidebarInset>
     </SidebarProvider>

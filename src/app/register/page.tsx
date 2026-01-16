@@ -10,13 +10,10 @@ import { MindBloomLogo } from '@/components/icons';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
-import { register } from '@/lib/auth';
-import { useAuth, useFirestore } from '@/firebase';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const auth = useAuth();
-  const firestore = useFirestore();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -30,15 +27,28 @@ export default function RegisterPage() {
     setLoading(true);
     setError(null);
     try {
-      await register(auth, firestore, email, password, { name });
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+          },
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // Automatically create user profile is handled by Auth Callback usually, 
+      // but for SignUp it sends email.
+      // If auto-confirm is enabled, they might be logged in.
+      // We will show success screen.
+
       setSuccess(true);
     } catch (err: any) {
-      if (err.code === 'auth/email-already-in-use') {
-        setError('This email address is already in use.');
-      } else {
-        setError('An unexpected error occurred. Please try again.');
-        console.error(err);
-      }
+      setError(err.message || 'An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -46,21 +56,21 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-       <div className="flex min-h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+      <div className="flex min-h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
         <div className="absolute inset-0 bg-grid bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
         <Card className="w-full max-w-md z-10 shadow-2xl">
           <CardHeader className="text-center">
-             <div className="flex justify-center items-center mb-4">
-                <CheckCircle className="h-12 w-12 text-green-500" />
+            <div className="flex justify-center items-center mb-4">
+              <CheckCircle className="h-12 w-12 text-green-500" />
             </div>
             <CardTitle className="text-3xl font-headline">Registration Successful</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-muted-foreground mb-6">
-                A verification link has been sent to your email address. Please check your inbox and click the link to activate your account.
+              A verification link has been sent to your email address. Please check your inbox and click the link to activate your account.
             </p>
             <Button asChild>
-                <Link href="/">Back to Login</Link>
+              <Link href="/">Back to Login</Link>
             </Button>
           </CardContent>
         </Card>
@@ -74,14 +84,14 @@ export default function RegisterPage() {
       <Card className="w-full max-w-md z-10 shadow-2xl">
         <CardHeader className="text-center">
           <div className="flex justify-center items-center mb-4">
-             <MindBloomLogo className="h-12 w-12 text-primary" />
+            <MindBloomLogo className="h-12 w-12 text-primary" />
           </div>
           <CardTitle className="text-3xl font-headline">Create an Account</CardTitle>
           <CardDescription>Join MindBloom to start your wellness journey.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleRegister} className="space-y-4">
-             {error && (
+            {error && (
               <Alert variant="destructive">
                 <AlertTitle>Registration Failed</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
@@ -89,33 +99,33 @@ export default function RegisterPage() {
             )}
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input 
-                id="name" 
-                type="text" 
-                placeholder="John Doe" 
-                required 
+              <Input
+                id="name"
+                type="text"
+                placeholder="John Doe"
+                required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="student@example.edu" 
-                required 
+              <Input
+                id="email"
+                type="email"
+                placeholder="student@example.edu"
+                required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                />
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
+              <Input
+                id="password"
                 type="password"
                 placeholder="Must be at least 6 characters"
-                required 
+                required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />

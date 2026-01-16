@@ -2,7 +2,6 @@
 
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
-import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { MouseTrail } from '@/components/ui/mouse-trail';
 import Script from 'next/script';
 
@@ -15,7 +14,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <title>MindBloom</title>
-        <meta name="description" content="A Digital Psychological Intervention System"/>
+        <meta name="description" content="A Digital Psychological Intervention System" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -23,9 +22,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <MouseTrail />
-        <FirebaseClientProvider>
-          {children}
-        </FirebaseClientProvider>
+        {children}
         <Toaster />
       </body>
     </html>

@@ -6,14 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MindBloomLogo } from '@/components/icons';
-import { useAuth } from '@/firebase';
-import { sendPasswordResetEmail } from 'firebase/auth';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function ForgotPasswordPage() {
-  const auth = useAuth();
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -26,15 +24,17 @@ export default function ForgotPasswordPage() {
     setSuccess(false);
 
     try {
-      await sendPasswordResetEmail(auth, email);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/update-password`,
+      });
+
+      if (error) {
+        throw error;
+      }
+
       setSuccess(true);
     } catch (err: any) {
-      if (err.code === 'auth/user-not-found') {
-        setError('No user found with this email address.');
-      } else {
-        setError('An unexpected error occurred. Please try again.');
-        console.error(err);
-      }
+      setError(err.message || 'An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -46,29 +46,29 @@ export default function ForgotPasswordPage() {
       <Card className="w-full max-w-md z-10 shadow-2xl">
         <CardHeader className="text-center">
           <div className="flex justify-center items-center mb-4">
-             <MindBloomLogo className="h-12 w-12 text-primary" />
+            <MindBloomLogo className="h-12 w-12 text-primary" />
           </div>
           <CardTitle className="text-3xl font-headline">Forgot Password</CardTitle>
           <CardDescription>
-            {success 
-              ? "Check your inbox for the reset link." 
+            {success
+              ? "Check your inbox for the reset link."
               : "Enter your email and we'll send you a link to reset your password."
             }
-            </CardDescription>
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {success ? (
             <div className="text-center">
-                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                <Alert variant="default">
-                    <AlertTitle>Email Sent</AlertTitle>
-                    <AlertDescription>
-                        A password reset link has been sent to <strong>{email}</strong>. Please check your spam folder if you don't see it.
-                    </AlertDescription>
-                </Alert>
-                <Button asChild className="w-full mt-6">
-                    <Link href="/">Back to Login</Link>
-                </Button>
+              <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+              <Alert variant="default">
+                <AlertTitle>Email Sent</AlertTitle>
+                <AlertDescription>
+                  A password reset link has been sent to <strong>{email}</strong>. Please check your spam folder if you don't see it.
+                </AlertDescription>
+              </Alert>
+              <Button asChild className="w-full mt-6">
+                <Link href="/">Back to Login</Link>
+              </Button>
             </div>
           ) : (
             <form onSubmit={handleResetPassword} className="space-y-4">
@@ -80,11 +80,11 @@ export default function ForgotPasswordPage() {
               )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="student@example.edu" 
-                  required 
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="student@example.edu"
+                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -95,7 +95,7 @@ export default function ForgotPasswordPage() {
               </Button>
             </form>
           )}
-           <div className="mt-4 text-center text-sm">
+          <div className="mt-4 text-center text-sm">
             Remembered your password?{' '}
             <Link href="/" className="underline">
               Sign in
