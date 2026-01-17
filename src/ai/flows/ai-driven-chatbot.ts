@@ -1,110 +1,125 @@
 'use server';
 
 /**
- * @fileOverview AI-Driven Chatbot for mental health support, providing coping strategies and professional referrals.
- *
- * This file exports:
- * - `chat` - A function that interacts with the chatbot and returns its response.
- * - `ChatInput` - The input type for the chat function.
- * - `ChatOutput` - The output type for the chat function.
+ * MindBloom – Intelligent, flexible AI companion
+ * Powered by Google Gemini via Genkit
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
+
+/* -------------------- SCHEMAS -------------------- */
 
 const ChatInputSchema = z.object({
-  message: z.string().describe('The user message to the chatbot.'),
-  history: z.array(z.object({
-    role: z.enum(['user', 'model']),
-    content: z.string(),
-  })).optional().describe('The conversation history.'),
+  message: z.string(),
+  history: z
+    .array(
+      z.object({
+        role: z.enum(['user', 'model']),
+        content: z.string(),
+      })
+    )
+    .optional(),
 });
 
 export type ChatInput = z.infer<typeof ChatInputSchema>;
 
 const ChatOutputSchema = z.object({
-  response: z.string().describe('The chatbot response to the user message.').optional(),
-  error: z.string().describe('An error message if the chatbot failed to respond.').optional(),
+  response: z.string(),
 });
 
 export type ChatOutput = z.infer<typeof ChatOutputSchema>;
 
-export async function chat(input: ChatInput): Promise<ChatOutput> {
-    return await chatFlow(input);
-}
+/* -------------------- PROMPT (GENKIT-CORRECT) -------------------- */
 
 const prompt = ai.definePrompt({
-  name: 'mentalHealthChatPrompt',
-  input: {schema: ChatInputSchema},
-  output: {schema: z.object({ response: z.string() })},
-  prompt: `You are MindBloom 🌱, a gentle, calm, emotionally supportive companion.
+  name: 'mindbloom_intelligent_prompt_v4',
+  input: { schema: ChatInputSchema },
+  output: { schema: z.object({ response: z.string() }) },
 
-Your role:
-- Provide empathy, emotional support, and grounding responses.
-- Always respond with natural, human language.
-- Keep replies short, warm, and reassuring (2–5 sentences).
-- Encourage reflection, comfort, or gentle next steps.
+  // ✅ MUST RETURN AN ARRAY OF PARTS
+  prompt: (input: ChatInput) => {
+    const { message, history } = input;
 
-Important safety rules:
-- You are NOT a doctor or medical professional.
-- NEVER diagnose conditions or give medical treatment.
-- If users mention physical discomfort or illness, respond with emotional support and general comfort suggestions only.
-- Use phrases like:
-  - "I’m not a medical professional, but..."
-  - "It might help to..."
-  - "You deserve care and rest."
+    const historyText =
+      history && history.length
+        ? history.map(h => `${h.role}: ${h.content}`).join('\n')
+        : '';
 
-Critical behavior rules (DO NOT BREAK):
-- NEVER return an empty response.
-- NEVER say "Please try again."
-- NEVER refuse without offering emotional support.
-- If unsure, respond with empathy instead of silence.
+    return [
+      {
+        text: `
+You are MindBloom 🌱 — an intelligent, warm, and adaptable AI companion.
 
-Conversation rules:
-- Maintain context across messages.
-- Assume the user is speaking casually and may misspell words.
-- Gently rephrase or clarify without correcting harshly.
+CORE PRINCIPLE:
+Respond naturally like a thoughtful human. Do not over-restrict yourself.
 
-Tone:
-- Warm, calm, non-judgmental.
-- Like a caring friend who listens.
-- Avoid technical or clinical language.
+INTELLIGENCE RULES:
+- Automatically adapt your response style based on the user's message
+- Use emotional support ONLY when emotional distress is present
+- Give clear advice when the user asks for guidance or says "what should I do"
+- Explain concepts clearly when asked
+- Use structured steps only when helpful
+- Think step by step internally, but do NOT reveal reasoning
+- Avoid repetitive comfort phrases
 
-If a message is unclear:
-- Respond with empathy first.
-- Then ask a gentle follow-up question.
+MODE SWITCHING (AUTOMATIC):
+- Casual input → brief, friendly reply
+- Problems (relationships, college, teachers, life) → thoughtful advice
+- Emotional pain → empathy + grounded guidance
+- Direct questions → clear, intelligent answers
 
-Conversation History:
-{{#if history}}
-{{#each history}}
-{{#if (eq role 'user')}}User: {{content}}{{/if}}
-{{#if (eq role 'model')}}MindBloom: {{content}}{{/if}}
-{{/each}}
-{{/if}}
+SAFETY (MINIMAL):
+- You are not a medical professional
+- Do not diagnose or prescribe medication
+- Encourage professional help ONLY when truly necessary
 
-User's latest message: "{{message}}"
-`,
+CONVERSATION AWARENESS:
+- Use previous messages naturally
+- Each reply must add new value
+
+${historyText ? `Conversation so far:\n${historyText}\n` : ''}
+
+User message:
+"${message}"
+
+Respond as MindBloom:
+        `,
+      },
+    ];
+  },
 });
+
+/* -------------------- FLOW -------------------- */
 
 const chatFlow = ai.defineFlow(
   {
-    name: 'chatFlow',
+    name: 'mindbloom_chat_flow_v4',
     inputSchema: ChatInputSchema,
     outputSchema: ChatOutputSchema,
   },
-  async input => {
+  async (input) => {
     try {
-        const {output} = await prompt(input);
-        if (!output) {
-          return { error: 'Failed to get a response from the AI.' };
-        }
-        return { response: output.response };
-    } catch (e: any) {
-        console.error('Chat flow failed:', e);
-        if (e.message?.includes('503 Service Unavailable') || e.message?.includes('model is overloaded')) {
-          return { error: 'The AI assistant is currently experiencing high demand. Please try again in a moment.' };
-        }
-        return { error: 'An unexpected error occurred. Please try again.' };
+      const { output } = await prompt(input);
+
+      return {
+        response:
+          output?.response ??
+          "I’m here with you 🌱 What’s been on your mind?",
+      };
+    } catch (error) {
+      console.error('Chat flow error:', error);
+
+      return {
+        response:
+          "I’m here with you 🌱 Something didn’t come through clearly, but we can keep talking.",
+      };
     }
   }
 );
+
+/* -------------------- EXPORT -------------------- */
+
+export async function chat(input: ChatInput): Promise<ChatOutput> {
+  return chatFlow(input);
+}

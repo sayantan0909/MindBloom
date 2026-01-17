@@ -14,12 +14,6 @@ type Message = {
   content: string;
 };
 
-// Map roles for the generative AI model
-const roleMap = {
-    'user': 'user',
-    'model': 'model'
-};
-
 export default function ChatbotPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -33,10 +27,12 @@ export default function ChatbotPage() {
 
   useEffect(() => {
     if (scrollAreaRef.current) {
-        const viewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
-        if (viewport) {
-             viewport.scrollTop = viewport.scrollHeight;
-        }
+      const viewport = scrollAreaRef.current.querySelector(
+        'div[data-radix-scroll-area-viewport]'
+      );
+      if (viewport) {
+        viewport.scrollTop = viewport.scrollHeight;
+      }
     }
   }, [messages, isLoading]);
 
@@ -45,103 +41,157 @@ export default function ChatbotPage() {
     if (!input.trim()) return;
 
     const userMessage: Message = { role: 'user', content: input };
-    setMessages((prev) => [...prev, userMessage]);
+    const nextMessages = [...messages, userMessage];
+
+    setMessages(nextMessages);
     setInput('');
     setIsLoading(true);
-
-    const apiHistory = messages.map(m => ({
-        role: roleMap[m.role],
-        parts: [{ text: m.content }]
-    }));
 
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            message: input,
-            history: apiHistory
+        body: JSON.stringify({
+          message: input,
+          history: nextMessages.map(m => ({
+            role: m.role,
+            content: m.content,
+          })),
         }),
       });
 
       const data = await res.json();
 
-      if (!res.ok || !data.reply) {
-        setMessages((prev) => [...prev, { role: 'model', content: data.reply || "I'm here with you. Please try again." }]);
+      if (!res.ok || !data.response) {
+        setMessages(prev => [
+          ...prev,
+          {
+            role: 'model',
+            content:
+              "I’m here with you 🌱 Something went wrong, but you’re not alone.",
+          },
+        ]);
       } else {
-        setMessages((prev) => [...prev, { role: 'model', content: data.reply }]);
+        setMessages(prev => [
+          ...prev,
+          { role: 'model', content: data.response },
+        ]);
       }
-
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
-      setMessages((prev) => [...prev, { role: 'model', content: "An unexpected error occurred. Please try again." }]);
+      setMessages(prev => [
+        ...prev,
+        {
+          role: 'model',
+          content:
+            "I’m here with you 🌱 Something went wrong, but you’re not alone.",
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   return (
     <div className="h-[calc(100vh-120px)] flex flex-col">
-       <div className="text-center mb-4">
-             <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
-                <Bot className="h-10 w-10 text-primary" />
-             </div>
-            <h1 className="text-3xl md:text-4xl font-bold font-headline">AI-Driven Chatbot</h1>
-            <p className="text-muted-foreground mt-2 text-lg max-w-3xl mx-auto">
-                Your confidential space to talk. I'm here to offer support, suggest coping strategies, and guide you to resources.
-            </p>
+      <div className="text-center mb-4">
+        <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
+          <Bot className="h-10 w-10 text-primary" />
         </div>
+        <h1 className="text-3xl md:text-4xl font-bold font-headline">
+          AI-Driven Chatbot
+        </h1>
+        <p className="text-muted-foreground mt-2 text-lg max-w-3xl mx-auto">
+          Your confidential space to talk. I'm here to offer support, suggest
+          coping strategies, and guide you to resources.
+        </p>
+      </div>
+
       <div className="flex-grow flex items-center justify-center">
         <Card className="w-full max-w-3xl h-full flex flex-col shadow-2xl">
           <CardHeader>
             <CardTitle>MindBloom AI Assistant</CardTitle>
-            <CardDescription>This is a safe space. All conversations are confidential.</CardDescription>
+            <CardDescription>
+              This is a safe space. All conversations are confidential.
+            </CardDescription>
           </CardHeader>
+
           <div className="flex-grow flex flex-col">
             <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
               <div className="space-y-6">
                 {messages.map((message, index) => (
-                  <div key={index} className={cn('flex items-start gap-3', message.role === 'user' ? 'justify-end' : 'justify-start')}>
+                  <div
+                    key={index}
+                    className={cn(
+                      'flex items-start gap-3',
+                      message.role === 'user'
+                        ? 'justify-end'
+                        : 'justify-start'
+                    )}
+                  >
                     {message.role === 'model' && (
                       <Avatar className="w-8 h-8 bg-primary/20 text-primary">
-                        <AvatarFallback><Bot size={20} /></AvatarFallback>
+                        <AvatarFallback>
+                          <Bot size={20} />
+                        </AvatarFallback>
                       </Avatar>
                     )}
-                    <div className={cn('max-w-sm md:max-w-md lg:max-w-lg rounded-2xl px-4 py-3 whitespace-pre-wrap', message.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-card border rounded-bl-none')}>
-                      <p className="text-sm leading-relaxed">{message.content}</p>
+
+                    <div
+                      className={cn(
+                        'max-w-sm md:max-w-md lg:max-w-lg rounded-2xl px-4 py-3 whitespace-pre-wrap',
+                        message.role === 'user'
+                          ? 'bg-primary text-primary-foreground rounded-br-none'
+                          : 'bg-card border rounded-bl-none'
+                      )}
+                    >
+                      <p className="text-sm leading-relaxed">
+                        {message.content}
+                      </p>
                     </div>
+
                     {message.role === 'user' && (
                       <Avatar className="w-8 h-8">
-                        <AvatarFallback><User size={20} /></AvatarFallback>
+                        <AvatarFallback>
+                          <User size={20} />
+                        </AvatarFallback>
                       </Avatar>
                     )}
                   </div>
                 ))}
-                 {isLoading && (
-                   <div className='flex items-start gap-3 justify-start'>
-                      <Avatar className="w-8 h-8 bg-primary/20 text-primary">
-                          <AvatarFallback><Bot size={20} /></AvatarFallback>
-                      </Avatar>
-                      <div className='max-w-sm md:max-w-md lg:max-w-lg rounded-2xl px-4 py-3 bg-card border rounded-bl-none flex items-center'>
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                      </div>
-                   </div>
+
+                {isLoading && (
+                  <div className="flex items-start gap-3 justify-start">
+                    <Avatar className="w-8 h-8 bg-primary/20 text-primary">
+                      <AvatarFallback>
+                        <Bot size={20} />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="max-w-sm rounded-2xl px-4 py-3 bg-card border rounded-bl-none flex items-center">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    </div>
+                  </div>
                 )}
               </div>
             </ScrollArea>
-            <div className='p-4 border-t'>
-              <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+
+            <div className="p-4 border-t">
+              <form
+                onSubmit={handleSendMessage}
+                className="flex items-center gap-2"
+              >
                 <Input
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={e => setInput(e.target.value)}
                   placeholder="Type how you're feeling..."
                   autoComplete="off"
                   disabled={isLoading}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { handleSendMessage(e); }}}
                 />
-                <Button type="submit" disabled={isLoading || !input.trim()}>
+                <Button
+                  type="submit"
+                  disabled={isLoading || !input.trim()}
+                >
                   <Send className="h-4 w-4" />
-                  <span className="sr-only">Send</span>
                 </Button>
               </form>
             </div>
