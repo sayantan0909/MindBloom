@@ -1,131 +1,123 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { MindBloomLogo } from '@/components/icons';
-import { supabase } from '@/lib/supabaseClient';
-import { signInWithGoogle } from '@/lib/auth'; // Import Google helper
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { ArrowRight, Shield, Brain, Users } from 'lucide-react';
 
-export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    setGoogleLoading(true);
-    await signInWithGoogle();
-    // Redirect happens automatically
-  };
-
+export default function HomePage() {
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
-      <div className="absolute inset-0 bg-grid bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
-      <Card className="w-full max-w-md z-10 shadow-2xl">
-        <CardHeader className="text-center">
-          <div className="flex justify-center items-center mb-4">
-            <MindBloomLogo className="h-12 w-12 text-primary" />
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      {/* Navigation */}
+      <nav className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MindBloomLogo className="h-8 w-8 text-primary" />
+            <span className="text-2xl font-headline font-bold">MindBloom</span>
           </div>
-          <CardTitle className="text-3xl font-headline">Welcome Back</CardTitle>
-          <CardDescription>Sign in to continue to MindBloom.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertTitle>Login Failed</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="student@example.edu"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
-                <Link
-                  href="/forgot-password"
-                  className="ml-auto inline-block text-sm underline"
-                >
-                  Forgot your password?
-                </Link>
-              </div>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <Button type="submit" className="w-full !mt-6" disabled={loading || googleLoading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign In
-            </Button>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-              </div>
-            </div>
-
-            <Button variant="outline" type="button" className="w-full" onClick={handleGoogleLogin} disabled={loading || googleLoading}>
-              {googleLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Google
-            </Button>
-
-          </form>
-          <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{' '}
-            <Link href="/register" className="underline">
-              Sign up
+          <div className="flex gap-4">
+            <Link href="/login">
+              <Button variant="ghost">Sign In</Button>
+            </Link>
+            <Link href="/register">
+              <Button>Get Started</Button>
             </Link>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+        <h1 className="text-5xl sm:text-6xl font-headline font-bold mb-6 text-gray-900 dark:text-white">
+          Your Mental Health Companion
+        </h1>
+        <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
+          MindBloom is a digital psychological intervention system designed to support your mental wellbeing with AI-driven insights, peer support, and personalized resources.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link href="/login">
+            <Button size="lg" className="w-full sm:w-auto">
+              Sign In <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
+          <Link href="/register">
+            <Button size="lg" variant="outline" className="w-full sm:w-auto">
+              Create Account
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <h2 className="text-3xl font-headline font-bold text-center mb-12 text-gray-900 dark:text-white">
+          Features
+        </h2>
+        <div className="grid md:grid-cols-3 gap-8">
+          <Card>
+            <CardHeader>
+              <Brain className="h-8 w-8 text-primary mb-2" />
+              <CardTitle>AI-Driven Insights</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 dark:text-gray-300">
+                Get personalized recommendations powered by advanced AI analysis.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <Users className="h-8 w-8 text-primary mb-2" />
+              <CardTitle>Peer Support</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 dark:text-gray-300">
+                Connect with others on similar mental health journeys and share experiences.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <Shield className="h-8 w-8 text-primary mb-2" />
+              <CardTitle>Privacy First</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 dark:text-gray-300">
+                Your data is encrypted and protected with enterprise-grade security.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2">
+          <CardHeader>
+            <CardTitle className="text-3xl">Ready to Start Your Mental Health Journey?</CardTitle>
+            <CardDescription className="text-lg">
+              Join thousands of users improving their mental wellbeing with MindBloom.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/register">
+              <Button size="lg">
+                Sign Up Now <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 mt-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-gray-600 dark:text-gray-400">
+          <p>&copy; 2026 MindBloom. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 }
