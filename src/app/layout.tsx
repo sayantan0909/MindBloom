@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { MouseTrail } from '@/components/ui/mouse-trail';
 import Script from 'next/script';
+import { ThemeProvider } from '@/components/theme-provider';
 
 export default function RootLayout({
   children,
@@ -20,10 +21,12 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;500;700&display=swap" rel="stylesheet" />
         <Script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossOrigin="anonymous" />
       </head>
-      <body className="font-body antialiased">
-        <MouseTrail />
-        {children}
-        <Toaster />
+      <body className="font-body antialiased bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-200">
+        <ThemeProvider>
+          <MouseTrail />
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

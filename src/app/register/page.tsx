@@ -56,7 +56,7 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+      <div className="flex min-h-screen w-full items-center justify-center p-4">
         <div className="absolute inset-0 bg-grid bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
         <Card className="w-full max-w-md z-10 shadow-2xl">
           <CardHeader className="text-center">
@@ -79,7 +79,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+    <div className="flex min-h-screen w-full items-center justify-center p-4">
       <div className="absolute inset-0 bg-grid bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
       <Card className="w-full max-w-md z-10 shadow-2xl">
         <CardHeader className="text-center">

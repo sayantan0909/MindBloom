@@ -7,7 +7,7 @@ import BlurText from '@/components/BlurText';
 
 export default function DemoPage() {
     return (
-        <div className="relative min-h-screen w-full bg-black text-white overflow-hidden">
+        <div className="relative min-h-screen w-full text-white overflow-hidden">
             {/* 1. Fluid Cursor Overlay */}
             <SplashCursor />
 
@@ -28,7 +28,7 @@ export default function DemoPage() {
                 <div className="text-center space-y-4 pointer-events-auto">
                     <BlurText
                         text="Visual Components Demo"
-                        className="text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-500"
+                        className="text-6xl font-bold text-transparent bg-clip-text from-cyan-400 to-purple-500"
                         delay={0.2}
                         direction="top"
                     />

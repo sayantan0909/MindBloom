@@ -33,7 +33,7 @@ export function BreathingBubble() {
   const [isSessionActive, setIsSessionActive] = useState(true);
   const [count, setCount] = useState(1);
   const [completed, setCompleted] = useState(false);
-  
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [soundOn, setSoundOn] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
@@ -60,29 +60,29 @@ export function BreathingBubble() {
 
   const enableVoice = () => {
     if (!('speechSynthesis' in window)) return;
-  
+
     // This "silent" utterance is a trick to unlock speech synthesis on mobile browsers
     const unlock = new SpeechSynthesisUtterance('Voice guidance enabled');
-    unlock.volume = 0; 
+    unlock.volume = 0;
     window.speechSynthesis.speak(unlock);
-  
+
     setVoiceEnabled(true);
     setVoiceOn(true); // Automatically turn on voice once enabled
   };
 
   const speak = (text: string) => {
     if (!voiceEnabled || !voiceOn) return;
-  
+
     window.speechSynthesis.cancel();
-  
+
     const u = new SpeechSynthesisUtterance(text);
     u.rate = 0.85;
     u.pitch = 1;
     u.volume = 1;
-  
+
     window.speechSynthesis.speak(u);
   };
-  
+
   useEffect(() => {
     return () => {
       audioRef.current?.pause();
@@ -95,10 +95,10 @@ export function BreathingBubble() {
     if (!isSessionActive || completed) return;
 
     const cycleTimer = setTimeout(() => {
-       setPhase((prev) =>
+      setPhase((prev) =>
         prev === 'inhale' ? 'hold' :
-        prev === 'hold' ? 'exhale' :
-        'inhale'
+          prev === 'hold' ? 'exhale' :
+            'inhale'
       );
     }, 4000);
 
@@ -133,91 +133,90 @@ export function BreathingBubble() {
     if (phase === 'hold') speak('Hold');
     if (phase === 'exhale') speak('Breathe out');
   }, [phase, voiceOn, completed]);
-  
+
   const handleRestart = () => {
     setPhase('inhale');
     setIsSessionActive(true);
     setCompleted(false);
   };
-  
+
   return (
-    <div className="relative flex flex-col items-center justify-center h-[60vh] bg-background overflow-hidden">
-        <div
-            className={`absolute inset-0 transition-colors duration-[4000ms] ${
-                completed ? 'bg-emerald-50' : 'bg-background'
-            }`}
-        />
+    <div className="relative flex flex-col items-center justify-center h-[60vh] overflow-hidden">
+      <div
+        className={`absolute inset-0 transition-colors duration-[4000ms] ${completed ? '' : ''
+          }`}
+      />
       <FloatingSoundControl soundOn={soundOn} toggle={toggleSound} />
-      
+
       {!voiceEnabled ? (
-         <button
-            onClick={enableVoice}
-            className="fixed bottom-20 right-6 z-50 rounded-full
-                       bg-white/90 px-4 py-2 shadow backdrop-blur"
-          >
-            🗣 Enable Voice
-          </button>
+        <button
+          onClick={enableVoice}
+          className="fixed bottom-20 right-6 z-50 rounded-full
+                       px-4 py-2 shadow backdrop-blur"
+        >
+          🗣 Enable Voice
+        </button>
       ) : (
         <button
-            onClick={() => setVoiceOn(!voiceOn)}
-            className="fixed bottom-20 right-6 z-50 rounded-full
-                      bg-white/90 px-4 py-2 shadow backdrop-blur"
-            >
-            {voiceOn ? '🗣️ Voice On' : '🔇 Voice Off'}
+          onClick={() => setVoiceOn(!voiceOn)}
+          className="fixed bottom-20 right-6 z-50 rounded-full
+                      px-4 py-2 shadow backdrop-blur"
+        >
+          {voiceOn ? '🗣️ Voice On' : '🔇 Voice Off'}
         </button>
       )}
 
-        <div className="relative flex flex-col items-center justify-center">
-            <div className="w-[420px] h-[420px] flex items-center justify-center relative">
-                <div
-                    className={`relative rounded-full transition-all duration-[3000ms] ease-out
-                        ${!completed ? `bg-gradient-to-br ${phaseStyles[phase]}` : 'bg-gradient-to-br from-emerald-300 to-teal-200'}
+      <div className="relative flex flex-col items-center justify-center">
+        <div className="w-[420px] h-[420px] flex items-center justify-center relative">
+          <div
+            className={`relative rounded-full transition-all duration-[3000ms] ease-out
+                        ${!completed ? `from-emerald-300 to-teal-200` : 'from-emerald-300 to-teal-200'}
                         ${!completed && phase !== 'hold' ? 'animate-[float_6s_ease-in-out_infinite]' : ''}
                         ${completed ? 'shadow-[0_0_120px_rgba(120,255,200,0.7)]' : 'shadow-lg'}
                     `}
-                    style={{
-                        width: completed ? finalSize : bubbleSize[phase],
-                        height: completed ? finalSize : bubbleSize[phase],
-                    }}
-                >
-                    {!completed && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center">
-                            <div className="text-5xl text-white/90">
-                                {phase === 'inhale' && '↑'}
-                                {phase === 'hold' && '•'}
-                                {phase === 'exhale' && '↓'}
-                            </div>
-
-                            <div className="text-6xl font-light text-white/90">
-                                {count}
-                            </div>
-
-                            <div className="text-lg text-white/80 tracking-wide">
-                                {phase === 'inhale' && 'Breathe in'}
-                                {phase === 'hold' && 'Hold'}
-                                {phase === 'exhale' && 'Breathe out'}
-                            </div>
-                        </div>
-                    )}
+            style={{
+              width: completed ? finalSize : bubbleSize[phase],
+              height: completed ? finalSize : bubbleSize[phase],
+            }}
+          >
+            {!completed && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center">
+                <div className="text-5xl text-white/90">
+                  {phase === 'inhale' && '↑'}
+                  {phase === 'hold' && '•'}
+                  {phase === 'exhale' && '↓'}
                 </div>
-            </div>
 
-            {completed && (
-                <div className="mt-8 text-center animate-fade-in z-10">
-                    <p className="text-xl font-medium text-emerald-700">
-                        Breathing session complete
-                    </p>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                        Your body is now in a calmer state
-                    </p>
-                    <div className='flex gap-3 mt-6'>
-                        <Button onClick={handleRestart}>
-                            Restart
-                        </Button>
-                    </div>
+                <div className="text-6xl font-light text-white/90">
+                  {count}
                 </div>
+
+                <div className="text-lg text-white/80 tracking-wide">
+                  {phase === 'inhale' && 'Breathe in'}
+                  {phase === 'hold' && 'Hold'}
+                  {phase === 'exhale' && 'Breathe out'}
+                </div>
+              </div>
             )}
+          </div>
         </div>
+
+        {completed && (
+          <div className="mt-8 text-center animate-fade-in z-10">
+            <p className="text-xl font-medium text-emerald-700">
+              Breathing session complete
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Your body is now in a calmer state
+            </p>
+            <div className='flex gap-3 mt-6'>
+              <Button onClick={handleRestart}>
+                Restart
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
