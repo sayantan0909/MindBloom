@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Bot, ClipboardList, BookOpen } from "lucide-react";
+import { ArrowRight, Bot, ClipboardList, BookOpen, Users } from "lucide-react";
 import Link from "next/link";
 import { useSupabaseUser } from "@/hooks/useSupabaseUser";
 import { WobbleCard } from "@/components/ui/wobble-card";
@@ -125,6 +125,33 @@ export default function DashboardPage() {
               <Button asChild className="w-full bg-pink-600 hover:bg-pink-700 dark:bg-pink-500 dark:hover:bg-pink-600 text-white shadow-lg">
                 <Link href="/dashboard/chatbot">
                   Start Chatting <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </WobbleCard>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <WobbleCard containerClassName="bg-gradient-to-br from-indigo-100 to-blue-200 dark:from-indigo-900/50 dark:to-blue-800/50 min-h-[300px] border border-indigo-200 dark:border-indigo-700/50 shadow-xl hover:shadow-2xl backdrop-blur-sm">
+            <CardHeader>
+              <div className="flex items-center gap-4">
+                <div className="bg-indigo-300/60 dark:bg-indigo-700 p-3 rounded-full">
+                  <Users className="h-6 w-6 text-indigo-700 dark:text-indigo-200" />
+                </div>
+                <CardTitle className="font-headline text-2xl text-indigo-900 dark:text-indigo-100">Peer Support</CardTitle>
+              </div>
+              <CardDescription className="pt-2 text-indigo-800 dark:text-indigo-200">
+                Connect anonymously with fellow students who understand what you're going through.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-grow flex items-end mt-4">
+              <Button asChild className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white shadow-lg">
+                <Link href="/dashboard/peer-support">
+                  Connect Now <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
             </CardContent>

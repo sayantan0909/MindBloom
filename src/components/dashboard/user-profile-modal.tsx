@@ -63,11 +63,17 @@ export function UserProfileModal() {
                     .eq('id', user.id)
                     .single()
 
-                if (error) {
-                    console.error('Error fetching profile:', error)
-                    setLoading(false)
-                    return
+                if (error && error.code !== "PGRST116") {
+                    console.error("Error fetching profile:", {
+                        message: error.message,
+                        code: error.code,
+                    });
+                    setLoading(false);
+                    return;
                 }
+
+                // PGRST116 = no rows yet → this is OK
+
 
                 if (data) {
                     const profile = data as any; // Cast to any to avoid strict type issues with 'never' if inference failed

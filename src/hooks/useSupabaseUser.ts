@@ -1,39 +1,46 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { User } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
 
 export function useSupabaseUser() {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+
+    // Prevent double sync on re-renders
     const hasSynced = useRef(false);
 
     useEffect(() => {
         const syncUser = async (authUser: User) => {
-            const { error } = await supabase
-                .from("users")
-                .upsert(
-                    {
-                        auth_user_id: authUser.id,
-                        email: authUser.email,
-                        name: authUser.user_metadata?.name ?? null,
-                        last_login: new Date().toISOString(),
-                        is_active: true,
-                    },
-                    {
-                        onConflict: "email", // ✅ THIS FIXES THE 409 ERROR
-                    }
-                );
+            const { error } = await supabase.from("profiles").upsert({
+                id: authUser.id, // MUST match auth.users.id
+                email: authUser.email,
+                name: authUser.user_metadata?.name ?? null,
+                avatar_url: authUser.user_metadata?.avatar_url ?? null,
+                created_at: new Date().toISOString(),
+            });
 
             if (error) {
-                console.error("❌ User sync failed:", error);
+                console.error("❌ User sync failed:", {
+                    message: error.message,
+                    details: error.details,
+                    hint: error.hint,
+                    code: error.code,
+                });
             } else {
                 console.log("✅ User saved to database");
             }
         };
 
-        supabase.auth.getUser().then(({ data }) => {
+        // Initial session load
+        supabase.auth.getUser().then(({ data, error }) => {
+            if (error) {
+                console.error("❌ Failed to get user:", error);
+                setLoading(false);
+                return;
+            }
+
             setUser(data.user);
             setLoading(false);
 
@@ -43,6 +50,7 @@ export function useSupabaseUser() {
             }
         });
 
+        // Auth state changes (login / logout)
         const {
             data: { subscription },
         } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -54,7 +62,9 @@ export function useSupabaseUser() {
             }
         });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            subscription.unsubscribe();
+        };
     }, []);
 
     return { user, loading };

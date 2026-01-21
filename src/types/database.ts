@@ -323,6 +323,65 @@ export interface Database {
                     created_at?: string
                 }
             }
+            peer_support_chats: {
+                Row: {
+                    id: string
+                    initiator_id: string
+                    recipient_id: string | null
+                    room_id: string
+                    status: 'active' | 'ended' | 'waiting'
+                    first_message: string | null
+                    created_at: string
+                    ended_at: string | null
+                }
+                Insert: {
+                    id?: string
+                    initiator_id: string
+                    recipient_id?: string | null
+                    room_id: string
+                    status?: 'active' | 'ended' | 'waiting'
+                    first_message?: string | null
+                    created_at?: string
+                    ended_at?: string | null
+                }
+                Update: {
+                    id?: string
+                    initiator_id?: string
+                    recipient_id?: string | null
+                    room_id?: string
+                    status?: 'active' | 'ended' | 'waiting'
+                    first_message?: string | null
+                    created_at?: string
+                    ended_at?: string | null
+                }
+            }
+            peer_support_messages: {
+                Row: {
+                    id: string
+                    chat_id: string
+                    sender_id: string | null
+                    sender_type: 'user' | 'ai' | 'system'
+                    content: string
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    chat_id: string
+                    sender_id?: string | null
+                    sender_type?: 'user' | 'ai' | 'system'
+                    content: string
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    chat_id?: string
+                    sender_id?: string | null
+                    sender_type?: 'user' | 'ai' | 'system'
+                    content?: string
+                    created_at?: string
+                }
+            }
+
             chatbot_conversations: {
                 Row: {
                     id: string
