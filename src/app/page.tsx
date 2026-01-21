@@ -13,7 +13,7 @@ import { motion } from 'framer-motion';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-screen relative bg-[#05010d] overflow-hidden">
       {/* Galaxy Background */}
       <Galaxy
         starSpeed={0.5}

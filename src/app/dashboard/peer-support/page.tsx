@@ -23,6 +23,9 @@ import {
 } from 'lucide-react';
 import { SUPPORT_ROOMS } from '@/types/peer-support';
 import type { PeerSupportMessage } from '@/types/peer-support';
+import { motion, AnimatePresence } from 'framer-motion';
+import { GradientText } from '@/components/ui/gradient-text';
+import { GlassCard } from '@/components/dashboard/glass-card';
 
 const supabase: any = createClient();
 
@@ -500,37 +503,49 @@ export default function PeerSupportPage() {
   // HOME VIEW
   if (currentView === 'home') {
     return (
-      <div className="min-h-screen bg-transparent p-6">
-        <div className="max-w-6xl mx-auto space-y-8">
-          <div className="text-center space-y-4 py-8">
-            <div className="mx-auto bg-gradient-to-br from-blue-500 to-indigo-600 p-6 rounded-3xl w-fit shadow-lg">
+      <div className="min-h-screen py-6 px-4 md:px-8">
+        <div className="max-w-7xl mx-auto space-y-12">
+          {/* Hero Section */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center space-y-6 py-12"
+          >
+            <motion.div
+              whileHover={{ scale: 1.05, rotate: 5 }}
+              className="mx-auto bg-gradient-to-br from-indigo-500 to-purple-600 p-6 rounded-[2rem] w-fit shadow-2xl shadow-indigo-500/20"
+            >
               <Users className="h-12 w-12 text-white" />
-            </div>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
-              Peer Support
+            </motion.div>
+            <h1 className="text-5xl md:text-6xl font-bold font-headline tracking-tight">
+              <GradientText colors={['#6366f1', '#a855f7', '#ec4899']}>
+                Peer Support
+              </GradientText>
             </h1>
-            <p className="text-slate-600 dark:text-slate-300 text-lg max-w-2xl mx-auto font-medium">
-              A anonymous space to connect, share, and support fellow students.
+            <p className="text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
+              Safe, anonymous, and empathetic. Connect with fellow students who truly understand your journey.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="flex justify-center items-center mb-8 gap-4">
-            <div className="bg-slate-200/50 dark:bg-gray-800/50 p-1 rounded-2xl flex gap-1 backdrop-blur-sm border border-slate-300/50 dark:border-gray-700/50">
+          <div className="flex justify-center items-center mb-12">
+            <div className="bg-white/40 dark:bg-slate-800/40 p-1.5 rounded-[1.5rem] flex gap-2 backdrop-blur-xl border border-white/20 shadow-xl">
               <Button
                 variant={!isSupportMode ? "default" : "ghost"}
                 onClick={() => setIsSupportMode(false)}
-                className={`rounded-xl px-8 ${!isSupportMode ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-md' : ''}`}
+                className={`rounded-2xl px-10 h-12 text-md font-bold transition-all duration-300 ${!isSupportMode ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-600 dark:text-slate-300 hover:bg-white/40'}`}
               >
                 Get Support
               </Button>
               <Button
                 variant={isSupportMode ? "default" : "ghost"}
                 onClick={() => setIsSupportMode(true)}
-                className={`rounded-xl px-8 ${isSupportMode ? 'bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 shadow-md' : ''}`}
+                className={`rounded-2xl px-10 h-12 text-md font-bold transition-all duration-300 relative ${isSupportMode ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/30' : 'text-slate-600 dark:text-slate-300 hover:bg-white/40'}`}
               >
                 Support Others
                 {waitingChats.length > 0 && (
-                  <Badge className="ml-2 bg-emerald-500 animate-pulse">{waitingChats.length}</Badge>
+                  <Badge className="absolute -top-2 -right-2 bg-pink-500 text-white border-2 border-white dark:border-slate-900 animate-bounce">
+                    {waitingChats.length}
+                  </Badge>
                 )}
               </Button>
             </div>
@@ -552,52 +567,62 @@ export default function PeerSupportPage() {
           </div>
 
           {!isSupportMode ? (
-            <div className="max-w-md mx-auto">
-              <Card className="border-2 border-blue-200 dark:border-blue-800 shadow-xl bg-gradient-to-br from-white to-blue-50/50 dark:from-gray-800 dark:to-blue-900/50 hover:shadow-2xl transition-all duration-300 overflow-hidden backdrop-blur-sm">
-                <CardHeader className="relative space-y-3 pb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-md">
-                      <MessageCircle className="h-6 w-6 text-white" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 }}
+              className="max-w-2xl mx-auto"
+            >
+              <GlassCard className="p-10 border-indigo-200/50 dark:border-indigo-800/50">
+                <div className="space-y-8">
+                  <div className="flex items-center gap-6">
+                    <div className="p-5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[1.5rem] shadow-xl shadow-indigo-500/20">
+                      <MessageCircle className="h-8 w-8 text-white" />
                     </div>
                     <div>
-                      <CardTitle className="text-2xl dark:text-white font-headline">Talk to a Peer</CardTitle>
-                      <CardDescription className="text-base dark:text-slate-300">Safe, anonymous student support</CardDescription>
+                      <h3 className="text-3xl font-bold dark:text-white font-headline">Talk to a Peer</h3>
+                      <p className="text-lg text-slate-500 dark:text-slate-400 font-medium">Safe, anonymous student-to-student support</p>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent className="relative space-y-6">
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <div className="h-6 w-6 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center flex-shrink-0 mt-1">
-                        <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+
+                  <div className="grid gap-6">
+                    {[
+                      { icon: Sparkles, text: "Instant AI help while you wait for a human peer", color: "text-blue-500" },
+                      { icon: Users, text: "Completely anonymous. No identity shared.", color: "text-purple-500" },
+                      { icon: Heart, text: "Empathetic listeners who understand student life", color: "text-pink-500" }
+                    ].map((feature, i) => (
+                      <div key={i} className="flex items-center gap-4 group">
+                        <div className={`p-2 rounded-xl bg-slate-100 dark:bg-slate-800 transition-colors group-hover:bg-white dark:group-hover:bg-slate-700`}>
+                          <feature.icon className={`h-5 w-5 ${feature.color}`} />
+                        </div>
+                        <p className="text-slate-600 dark:text-slate-300 font-medium">{feature.text}</p>
                       </div>
-                      <p className="text-sm text-slate-600 dark:text-slate-300">Live peer listeners available across 5 distinct rooms.</p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="h-6 w-6 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0 mt-1">
-                        <Sparkles className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <p className="text-sm text-slate-600 dark:text-slate-300">Immediate AI-assisted chat while you wait for a peer.</p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="h-6 w-6 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center flex-shrink-0 mt-1">
-                        <Users className="h-3 w-3 text-purple-600 dark:text-purple-400" />
-                      </div>
-                      <p className="text-sm text-slate-600 dark:text-slate-300">Completely anonymous. No names, only empathy.</p>
-                    </div>
+                    ))}
                   </div>
+
                   <Button
                     onClick={() => setCurrentView('room-select')}
-                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg h-14 text-xl font-bold rounded-2xl group"
+                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-2xl shadow-indigo-600/20 h-16 text-xl font-bold rounded-2xl group transition-all"
                   >
                     Start Connection
-                    <ArrowLeft className="ml-2 h-5 w-5 rotate-180 group-hover:translate-x-1 transition-transform" />
+                    <ArrowLeft className="ml-2 h-6 w-6 rotate-180 group-hover:translate-x-1 transition-transform" />
                   </Button>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </GlassCard>
+            </motion.div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <motion.div
+              variants={{
+                hidden: { opacity: 0 },
+                show: {
+                  opacity: 1,
+                  transition: { staggerChildren: 0.1 }
+                }
+              }}
+              initial="hidden"
+              animate="show"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            >
               {isLoadingWaiting ? (
                 <div className="col-span-full py-20 text-center space-y-4">
                   <Loader2 className="h-10 w-10 text-blue-500 animate-spin mx-auto" />
@@ -617,35 +642,47 @@ export default function PeerSupportPage() {
                   const room = SUPPORT_ROOMS.find(r => r.id === chat.room_id);
                   const Icon = getIconComponent(chat.room_id);
                   return (
-                    <Card key={chat.id} className="border-2 hover:border-emerald-500 dark:hover:border-emerald-500/50 transition-all duration-300 hover:shadow-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm group">
-                      <CardHeader>
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-xl bg-gradient-to-br ${room?.color || 'from-slate-500 to-slate-600'}`}>
-                            <Icon className="h-5 w-5 text-white" />
+                    <motion.div
+                      key={chat.id}
+                      variants={{
+                        hidden: { opacity: 0, scale: 0.9 },
+                        show: { opacity: 1, scale: 1 }
+                      }}
+                    >
+                      <GlassCard className="h-full flex flex-col hover:border-emerald-500/50 transition-colors">
+                        <CardHeader>
+                          <div className="flex items-center gap-4">
+                            <div className={`p-3 rounded-2xl bg-gradient-to-br ${room?.color || 'from-slate-500 to-slate-600'} shadow-lg`}>
+                              <Icon className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                              <CardTitle className="text-xl font-bold dark:text-white">{room?.name || 'General Support'}</CardTitle>
+                              <CardDescription className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                                Waiting for {Math.floor((Date.now() - new Date(chat.created_at).getTime()) / 60000)}m
+                              </CardDescription>
+                            </div>
                           </div>
-                          <div>
-                            <CardTitle className="text-lg dark:text-white">{room?.name || 'General Support'}</CardTitle>
-                            <CardDescription className="text-xs">Waiting for {Math.floor((Date.now() - new Date(chat.created_at).getTime()) / 60000)}m</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex-1 flex flex-col justify-between">
+                          <div className="bg-slate-100/50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <p className="text-sm text-slate-600 dark:text-slate-300 italic line-clamp-3 leading-relaxed">
+                              "{chat.first_message || 'Feeling overwhelmed and looking for someone to talk to...'}"
+                            </p>
                           </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-slate-600 dark:text-slate-300 italic line-clamp-2">
-                          "{chat.first_message || 'Feeling overwhelmed and looking for someone to talk to...'}"
-                        </p>
-                        <Button
-                          disabled={isJoining}
-                          onClick={() => handleJoinChat(chat)}
-                          className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-lg border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 transition-all"
-                        >
-                          {isJoining ? 'Joining...' : 'Accept & Listen'}
-                        </Button>
-                      </CardContent>
-                    </Card>
+                          <Button
+                            disabled={isJoining}
+                            onClick={() => handleJoinChat(chat)}
+                            className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-12 text-md font-bold shadow-lg shadow-emerald-600/20 active:scale-95 transition-all"
+                          >
+                            {isJoining ? 'Joining...' : 'Accept & Listen'}
+                          </Button>
+                        </CardContent>
+                      </GlassCard>
+                    </motion.div>
                   );
                 })
               )}
-            </div>
+            </motion.div>
           )}
         </div>
       </div>
@@ -660,65 +697,89 @@ export default function PeerSupportPage() {
   // [REMAINING VIEWS - CONTINUING FULL REPLACEMENT]
   if (currentView === 'room-select') {
     return (
-      <div className="min-h-screen bg-transparent p-6">
-        <div className="max-w-5xl mx-auto space-y-6">
+      <div className="min-h-screen py-10 px-4 md:px-8">
+        <div className="max-w-6xl mx-auto space-y-10">
           <Button
             variant="ghost"
             onClick={() => setCurrentView('home')}
-            className="mb-4 dark:text-white dark:hover:bg-gray-800"
+            className="mb-4 text-slate-600 dark:text-slate-300 hover:bg-white/40 dark:hover:bg-slate-800/40 rounded-xl transition-all"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            <ArrowLeft className="h-5 w-5 mr-3" />
+            Back to Dashboard
           </Button>
 
-          <div className="text-center space-y-4">
-            <h2 className="text-3xl font-bold text-slate-800 dark:text-white font-headline">What's on your mind?</h2>
-            <div className="max-w-xl mx-auto space-y-4">
-              <Input
-                value={firstMessage}
-                onChange={(e) => setFirstMessage(e.target.value)}
-                placeholder="Optional: Tell your peer a bit about how you're feeling..."
-                className="h-14 px-6 bg-white dark:bg-gray-800 border-2 border-blue-200 dark:border-blue-900 rounded-2xl text-lg font-medium shadow-sm transition-all focus:border-blue-500"
-              />
-              <p className="text-slate-600 dark:text-slate-300">Choose a room to find a peer listener</p>
+          <div className="text-center space-y-6">
+            <h2 className="text-4xl font-bold text-slate-800 dark:text-white font-headline">What's on your mind?</h2>
+            <div className="max-w-2xl mx-auto space-y-6">
+              <div className="relative group">
+                <Input
+                  value={firstMessage}
+                  onChange={(e) => setFirstMessage(e.target.value)}
+                  placeholder="Tell your peer a bit about how you're feeling..."
+                  className="h-16 px-8 bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl border-2 border-indigo-200/50 dark:border-indigo-900/50 rounded-2xl text-lg font-medium shadow-xl transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 placeholder:text-slate-400"
+                />
+                <Sparkles className="absolute right-6 top-1/2 -translate-y-1/2 h-6 w-6 text-indigo-400 opacity-50 group-hover:opacity-100 transition-opacity" />
+              </div>
+              <p className="text-lg text-slate-600 dark:text-slate-300 font-medium">Select a focused room to begin</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+          <motion.div
+            variants={{
+              hidden: { opacity: 0 },
+              show: {
+                opacity: 1,
+                transition: { staggerChildren: 0.1 }
+              }
+            }}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4"
+          >
             {SUPPORT_ROOMS.map((room) => {
               const Icon = getIconComponent(room.id);
               return (
-                <Card
+                <motion.div
                   key={room.id}
-                  className={`cursor-pointer border-2 ${room.borderColor} dark:border-opacity-50 bg-gradient-to-br ${room.color} dark:bg-opacity-20 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] backdrop-blur-sm group relative overflow-hidden`}
-                  onClick={() => handleRoomSelect(room)}
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    show: { opacity: 1, y: 0 }
+                  }}
                 >
-                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <Icon className="h-24 w-24" />
-                  </div>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="p-4 bg-white/80 dark:bg-gray-800/80 rounded-2xl shadow-sm group-hover:shadow-md transition-shadow">
-                          <Icon className="h-6 w-6 dark:text-white" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-xl dark:text-white font-headline">{room.name}</CardTitle>
-                          <CardDescription className="mt-1 dark:text-slate-300 font-medium">{room.description}</CardDescription>
-                        </div>
-                      </div>
-                      <Badge className="bg-green-500 dark:bg-green-600 border-none">
-                        <div className="flex items-center gap-1">
-                          <div className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-                          Online
-                        </div>
-                      </Badge>
+                  <GlassCard
+                    className={`cursor-pointer h-full border-opacity-50 hover:border-opacity-100 transition-all duration-500 relative overflow-hidden group`}
+                    onClick={() => handleRoomSelect(room)}
+                  >
+                    <div className={`absolute inset-0 bg-gradient-to-br ${room.color} opacity-10 group-hover:opacity-20 transition-opacity`} />
+                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity -rotate-12 translate-x-4 -translate-y-4">
+                      <Icon className="h-32 w-32" />
                     </div>
-                  </CardHeader>
-                </Card>
+                    <CardHeader className="relative z-10 p-8">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-6">
+                          <div className={`p-5 bg-white/90 dark:bg-slate-800/90 rounded-2xl shadow-xl shadow-black/5 group-hover:scale-110 transition-transform duration-500`}>
+                            <Icon className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+                          </div>
+                          <div className="space-y-1">
+                            <CardTitle className="text-2xl font-bold dark:text-white font-headline">{room.name}</CardTitle>
+                            <CardDescription className="text-md dark:text-slate-300 font-medium leading-tight">
+                              {room.description}
+                            </CardDescription>
+                          </div>
+                        </div>
+                        <Badge className="bg-emerald-500/90 dark:bg-emerald-600/90 text-white border-none py-1.5 px-3 rounded-full shadow-lg backdrop-blur-sm self-start">
+                          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+                            <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
+                            Active
+                          </div>
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                  </GlassCard>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         </div>
       </div>
     );
@@ -726,31 +787,52 @@ export default function PeerSupportPage() {
 
   if (currentView === 'matching') {
     return (
-      <div className="min-h-screen bg-transparent p-6">
-        <div className="max-w-2xl mx-auto space-y-6 pt-24 text-center">
-          <Card className="border-2 border-blue-200 dark:border-blue-800 shadow-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
-            <div className="h-2 w-full bg-slate-100 relative overflow-hidden">
-              <div className="absolute inset-0 bg-blue-500 animate-[loading_2s_ease-in-out_infinite]" />
+      <div className="min-h-screen py-24 px-4">
+        <div className="max-w-3xl mx-auto text-center">
+          <GlassCard hover={false} className="rounded-[3rem] overflow-hidden shadow-2xl">
+            <div className="h-3 w-full bg-slate-100/50 dark:bg-slate-900/50 relative overflow-hidden">
+              <motion.div
+                initial={{ x: "-100%" }}
+                animate={{ x: "100%" }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-500 to-transparent"
+              />
             </div>
-            <CardContent className="pt-16 pb-16 space-y-8">
-              <div className="relative">
-                <div className="absolute inset-0 animate-ping bg-blue-400/20 rounded-full h-20 w-20 mx-auto" />
-                <Loader2 className="h-20 w-20 text-blue-600 dark:text-blue-400 animate-spin mx-auto relative z-10" />
+            <CardContent className="pt-20 pb-20 space-y-12">
+              <div className="relative h-32 w-32 mx-auto">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="absolute inset-0 bg-indigo-500/20 rounded-full blur-2xl"
+                />
+                <Loader2 className="h-full w-full text-indigo-600 dark:text-indigo-400 animate-spin-slow relative z-10" />
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="absolute inset-4 bg-indigo-500/10 rounded-full"
+                />
               </div>
-              <div className="space-y-3">
-                <h3 className="text-3xl font-bold text-slate-800 dark:text-white font-headline">Matching You...</h3>
-                <p className="text-slate-600 dark:text-slate-300 max-w-sm mx-auto text-lg leading-relaxed">
-                  We're finding a peer listener in the <span className="text-blue-600 font-semibold">{selectedRoom?.name}</span> room.
+
+              <div className="space-y-4">
+                <h3 className="text-4xl font-bold dark:text-white font-headline">Matching You...</h3>
+                <p className="text-xl text-slate-600 dark:text-slate-300 max-w-md mx-auto leading-relaxed">
+                  We're finding an empathetic peer in the <span className="text-indigo-600 dark:text-indigo-400 font-bold">{selectedRoom?.name}</span> room.
                 </p>
               </div>
-              <div className="pt-4 flex flex-col items-center gap-3">
-                <div className="flex items-center gap-2 px-6 py-2 bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-full text-sm font-semibold border border-pink-100 dark:border-pink-800">
-                  <Sparkles className="h-4 w-4" />
-                  AI Responder will join if no peer is free
-                </div>
+
+              <div className="flex justify-center pt-4">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="flex items-center gap-3 px-8 py-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-2xl text-md font-bold border border-indigo-100 dark:border-indigo-800 shadow-sm"
+                >
+                  <Sparkles className="h-5 w-5 animate-pulse" />
+                  AI Support will join if no peer is available
+                </motion.div>
               </div>
             </CardContent>
-          </Card>
+          </GlassCard>
         </div>
       </div>
     );
@@ -759,56 +841,61 @@ export default function PeerSupportPage() {
   const displayMessages = isAiMode ? chatHistory : messages;
 
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col bg-white/80 dark:bg-gray-900/80 rounded-[2rem] overflow-hidden border border-slate-200 dark:border-gray-800 shadow-2xl backdrop-blur-xl relative">
-      {/* Background Peer Notification */}
-      {showPeerNotification && (
-        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-[60] animate-in fade-in slide-in-from-top-4 duration-500 px-4 w-full max-w-md">
-          <Card className="border-2 border-emerald-500 shadow-[0_20px_50px_rgba(0,0,0,0.3)] bg-white dark:bg-gray-800 p-5 rounded-3xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-1">
-              <Button variant="ghost" size="icon" onClick={() => setShowPeerNotification(false)} className="h-6 w-6 rounded-full opacity-50 hover:opacity-100">×</Button>
-            </div>
-            <div className="flex items-center gap-5">
-              <div className="bg-emerald-100 dark:bg-emerald-900/50 p-4 rounded-2xl shadow-inner group-hover:scale-110 transition-transform">
-                <Heart className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+    <div className="h-[calc(100vh-140px)] flex flex-col bg-white/40 dark:bg-slate-900/40 rounded-[2.5rem] overflow-hidden border border-white/20 shadow-2xl backdrop-blur-xl relative">
+      <AnimatePresence>
+        {showPeerNotification && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: -20, x: "-50%" }}
+            className="absolute top-24 left-1/2 z-[60] px-4 w-full max-w-md"
+          >
+            <GlassCard className="border-2 border-emerald-500 shadow-2xl p-6 relative group bg-white dark:bg-slate-900">
+              <div className="absolute top-0 right-0 p-2">
+                <Button variant="ghost" size="icon" onClick={() => setShowPeerNotification(false)} className="h-8 w-8 rounded-full opacity-50 hover:opacity-100">×</Button>
               </div>
-              <div className="flex-1 space-y-1">
-                <p className="text-lg font-bold dark:text-white">A Peer Listener is Here!</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">A real student has joined the room. Would you like to switch?</p>
+              <div className="flex items-center gap-6">
+                <div className="bg-emerald-100 dark:bg-emerald-900/50 p-4 rounded-2xl shadow-inner group-hover:scale-110 transition-transform duration-500">
+                  <Heart className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <p className="text-xl font-bold dark:text-white">A Peer is Online!</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">A real student is available to listen. Switch to live chat?</p>
+                </div>
               </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <Button onClick={switchToPeer} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 rounded-xl shadow-lg shadow-emerald-600/20">Connect with Peer</Button>
-              <Button variant="outline" onClick={() => setShowPeerNotification(false)} className="flex-1 font-bold h-12 rounded-xl border-2">Stay with AI</Button>
-            </div>
-          </Card>
-        </div>
-      )}
+              <div className="flex gap-4 mt-8">
+                <Button onClick={switchToPeer} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 rounded-xl shadow-xl shadow-emerald-600/20 active:scale-95 transition-all">Yes, Connect</Button>
+                <Button variant="outline" onClick={() => setShowPeerNotification(false)} className="flex-1 font-bold h-12 rounded-xl border-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">Stay with AI</Button>
+              </div>
+            </GlassCard>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Chat Header */}
-      <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border-b border-slate-200 dark:border-gray-700 p-5 z-10 shadow-sm">
+      <header className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl border-b border-white/20 p-6 z-10 shadow-lg">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <Button
               variant="ghost"
               size="icon"
               onClick={handleEndSession}
-              className="dark:text-white dark:hover:bg-gray-700 rounded-xl"
+              className="text-slate-600 dark:text-slate-300 hover:bg-white/40 dark:hover:bg-slate-700/40 rounded-2xl h-11 w-11 transition-all active:scale-90"
             >
               <ArrowLeft className="h-6 w-6" />
             </Button>
-            <div className="flex items-center gap-4">
-              <div className={`p-3 rounded-2xl shadow-lg ${isAiMode ? 'bg-gradient-to-br from-blue-500 to-indigo-600' : 'bg-gradient-to-br from-emerald-500 to-teal-600 animate-pulse'}`}>
-                {isAiMode ? <Brain className="h-6 w-6 text-white" /> : <Users className="h-6 w-6 text-white" />}
+            <div className="flex items-center gap-5">
+              <div className={`p-4 rounded-2xl shadow-2xl ${isAiMode ? 'bg-gradient-to-br from-indigo-500 to-purple-600' : 'bg-gradient-to-br from-emerald-500 to-teal-500 animate-pulse-slow shadow-emerald-500/30'}`}>
+                {isAiMode ? <Brain className="h-7 w-7 text-white" /> : <Users className="h-7 w-7 text-white" />}
               </div>
-              <div>
-                <h3 className="font-bold text-xl text-slate-800 dark:text-white font-headline">
-                  {isAiMode ? 'AI Support Assistant' : 'Peer Listener'}
+              <div className="space-y-1">
+                <h3 className="font-bold text-2xl text-slate-800 dark:text-white font-headline leading-none">
+                  {isAiMode ? 'AI Care Companion' : 'Live Peer Listener'}
                 </h3>
-                <div className="flex items-center gap-2">
-                  <div className={`h-2 w-2 rounded-full ${isAiMode ? 'bg-blue-400' : 'bg-green-400'} animate-pulse`} />
-                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                <div className="flex items-center gap-3">
+                  <div className={`h-2.5 w-2.5 rounded-full ${isAiMode ? 'bg-indigo-400' : 'bg-emerald-400'} animate-pulse`} />
+                  <p className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
                     {isAiMode
-                      ? 'Powered by Gemini • Private & Safe'
+                      ? 'Private Chat • Powered by Gemini'
                       : `Live Session • ${formatTime(sessionTime)} active`
                     }
                   </p>
@@ -817,47 +904,58 @@ export default function PeerSupportPage() {
             </div>
           </div>
           {!isAiMode && (
-            <Badge variant="outline" className="text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-1.5 text-sm font-bold rounded-full">
-              SECURE CONECTION
+            <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-5 py-2 text-xs font-black rounded-full shadow-sm">
+              SECURE ANONYMOUS CHANNEL
             </Badge>
           )}
         </div>
-      </div>
+      </header>
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-slate-50/50 dark:bg-gray-900/30">
+      <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-slate-50/30 dark:bg-slate-900/30 backdrop-blur-sm">
         {displayMessages.map((msg: any) => {
           const isUser = msg.sender === 'user' || msg.sender_id === userId;
           const isSystem = msg.sender === 'system' || msg.sender_type === 'system';
 
           if (isSystem) {
             return (
-              <div key={msg.id} className="flex justify-center flex-col items-center gap-2 py-4">
-                <Badge className="bg-slate-200 dark:bg-gray-800 text-slate-500 border-none">{msg.content}</Badge>
-              </div>
+              <motion.div
+                key={msg.id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex justify-center py-6"
+              >
+                <Badge className="bg-slate-200/50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-none px-6 py-1.5 rounded-full font-bold text-[10px] tracking-widest uppercase">
+                  {msg.content}
+                </Badge>
+              </motion.div>
             );
           }
 
           return (
-            <div
+            <motion.div
               key={msg.id}
-              className={`flex ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.3 }}
+              className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
             >
-              <div className={`max-w-[80%] ${isUser ? 'order-1' : 'order-2'}`}>
-                <div className={`rounded-[1.5rem] p-5 shadow-sm transition-all hover:shadow-md ${isUser
-                  ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-tr-none'
-                  : 'bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-tl-none'
+              <div className={`max-w-[75%] lg:max-w-[60%] flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+                <div className={`rounded-[2rem] px-6 py-4 shadow-xl transition-all duration-300 hover:shadow-2xl ${isUser
+                  ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-tr-none'
+                  : 'bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border border-white/20 dark:border-slate-700/20 rounded-tl-none text-slate-800 dark:text-slate-100'
                   }`}>
-                  <p className={`text-base leading-relaxed ${isUser ? 'text-white' : 'text-slate-800 dark:text-slate-200'}`}>
+                  <p className="text-base md:text-lg leading-relaxed font-medium">
                     {msg.content}
                   </p>
                 </div>
-                <div className={`flex items-center gap-1 mt-2 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1 ${isUser ? 'justify-end' : 'justify-start'}`}>
+                <div className={`flex items-center gap-2 mt-3 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-4 ${isUser ? 'flex-row' : 'flex-row-reverse'}`}>
+                  {!isUser && msg.sender_type === 'ai' && (
+                    <Badge className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-none h-5 px-2 rounded-md">AI COMPANION</Badge>
+                  )}
                   <span>{new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                  {!isUser && msg.sender_type === 'ai' && <Badge className="ml-2 scale-75 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 border-none">AI LOG</Badge>}
                 </div>
               </div>
-            </div>
+            </motion.div>
           );
         })}
 
@@ -876,33 +974,34 @@ export default function PeerSupportPage() {
         <div ref={messagesEndRef} className="h-4" />
       </div>
 
-      {/* Input Area */}
-      <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border-t border-slate-200 dark:border-gray-700 p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
-        <div className="max-w-4xl mx-auto flex gap-4">
+      <footer className="p-8 bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl border-t border-white/20">
+        <div className="max-w-4xl mx-auto flex gap-6 items-end">
           <div className="relative flex-1 group">
             <Input
               value={inputValue}
               onChange={(e) => handleInputChange(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Type your message with empathy..."
-              className="h-14 px-6 bg-slate-100/50 dark:bg-gray-900/50 border-2 border-transparent focus:border-blue-500 dark:focus:border-blue-500/50 rounded-2xl text-base ring-0 transition-all font-medium pr-12 dark:text-white"
+              placeholder="Share your thoughts with empathy..."
+              className="h-16 px-8 bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl border-2 border-transparent focus:border-indigo-500/50 rounded-[2rem] text-lg font-medium shadow-2xl transition-all pr-16 dark:text-white placeholder:text-slate-400"
             />
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-blue-500 transition-colors">
-              <Sparkles className="h-5 w-5" />
+            <div className="absolute right-6 bottom-5 text-indigo-400 opacity-50 group-hover:opacity-100 transition-opacity">
+              <Sparkles className="h-6 w-6" />
             </div>
           </div>
           <Button
             onClick={handleSendMessage}
             disabled={!inputValue.trim()}
-            className="h-14 w-14 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-xl shadow-blue-600/20 active:scale-95 transition-all p-0"
+            className="h-16 w-16 rounded-[2rem] bg-gradient-to-br from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-2xl shadow-indigo-600/30 active:scale-90 transition-all p-0 flex-shrink-0"
           >
-            <Send className="h-6 w-6" />
+            <Send className="h-7 w-7" />
           </Button>
         </div>
-        <p className="text-center mt-4 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">
-          MindBloom Anonymous Secure Channel
-        </p>
-      </div>
+        <div className="text-center mt-6">
+          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.4em] leading-none opacity-50">
+            MindBloom Encrypted Anonymous Channel
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

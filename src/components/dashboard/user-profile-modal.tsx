@@ -9,18 +9,10 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
-import { Loader2 } from 'lucide-react'
-
-// Explicitly define the row type or use 'any' if inference is tricky locally
-// This ensures we don't get 'never' errors
-interface UserRow {
-    date_of_birth: string | null
-    gender: string | null
-    phone: string | null
-    college_name: string | null
-    department: string | null
-    year_of_study: number | null
-}
+import { Loader2, UserCircle2, Sparkles, ShieldCheck } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { GlassCard } from '@/components/dashboard/glass-card'
+import { GradientText } from '@/components/ui/gradient-text'
 
 interface UserProfileData {
     date_of_birth: string
@@ -72,19 +64,14 @@ export function UserProfileModal() {
                     return;
                 }
 
-                // PGRST116 = no rows yet → this is OK
-
-
                 if (data) {
-                    const profile = data as any; // Cast to any to avoid strict type issues with 'never' if inference failed
+                    const profile = data as any;
 
-                    // Check if any required fields are missing
                     const requiredFields = ['date_of_birth', 'gender', 'phone', 'college_name', 'department', 'year_of_study']
                     const isIncomplete = requiredFields.some(field => !profile[field])
 
                     if (isIncomplete) {
                         setIsOpen(true)
-                        // Pre-fill existing data if any
                         setFormData({
                             date_of_birth: profile.date_of_birth || '',
                             gender: profile.gender || '',
@@ -117,8 +104,7 @@ export function UserProfileModal() {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) throw new Error('No user found')
 
-            const { error } = await supabase
-                .from('users')
+            const { error } = await (supabase.from('users') as any)
                 .update({
                     date_of_birth: formData.date_of_birth,
                     gender: formData.gender,
@@ -148,118 +134,130 @@ export function UserProfileModal() {
     return (
         <Dialog open={isOpen} onOpenChange={(open) => {
             if (!open && !submitting) {
-                // Prevent closing if we want to enforce it. 
-                // For now, let's allow inspection but maybe re-open on nav? 
-                // The checking logic runs on mount. If they close and reload, it opens again.
+                // Keep open to enforce completion
             }
         }}>
-            <DialogContent className="sm:max-w-[500px]" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
-                <DialogHeader>
-                    <DialogTitle>Complete Your Profile</DialogTitle>
-                    <DialogDescription>
-                        Please provide a few details to help us personalize your MindBloom experience.
-                    </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4 py-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="date_of_birth">Date of Birth</Label>
-                            <Input
-                                id="date_of_birth"
-                                type="date"
-                                required
-                                value={formData.date_of_birth}
-                                onChange={(e) => handleChange('date_of_birth', e.target.value)}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="gender">Gender</Label>
-                            <Select
-                                value={formData.gender}
-                                onValueChange={(value) => handleChange('gender', value)}
-                                required
-                            >
-                                <SelectTrigger id="gender">
-                                    <SelectValue placeholder="Select gender" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="male">Male</SelectItem>
-                                    <SelectItem value="female">Female</SelectItem>
-                                    <SelectItem value="non-binary">Non-binary</SelectItem>
-                                    <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
+            <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden border-none bg-transparent shadow-none" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+                <GlassCard className="border-white/60 dark:border-slate-700/60 shadow-2xl" hover={false}>
+                    <div className="p-8 space-y-8">
+                        <DialogHeader className="space-y-4">
+                            <div className="mx-auto bg-gradient-to-br from-indigo-500 to-purple-600 p-4 rounded-3xl w-fit shadow-xl shadow-indigo-500/20">
+                                <UserCircle2 className="h-10 w-10 text-white" />
+                            </div>
+                            <DialogTitle className="text-center font-black text-3xl font-headline tracking-tight">
+                                <GradientText colors={['#6366f1', '#a855f7']}>Complete Profile</GradientText>
+                            </DialogTitle>
+                            <DialogDescription className="text-center text-slate-500 font-medium">
+                                Help us personalize your MindBloom journey with a few more details about yourself.
+                            </DialogDescription>
+                        </DialogHeader>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="phone">Phone Number</Label>
-                        <Input
-                            id="phone"
-                            type="tel"
-                            placeholder="+1234567890"
-                            required
-                            value={formData.phone}
-                            onChange={(e) => handleChange('phone', e.target.value)}
-                        />
-                    </div>
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="date_of_birth" className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Date of Birth</Label>
+                                    <Input
+                                        id="date_of_birth"
+                                        type="date"
+                                        required
+                                        className="h-11 rounded-xl bg-white/40 dark:bg-slate-900/40 border-2 border-white/20 dark:border-slate-800 focus:border-indigo-500 transition-all font-bold"
+                                        value={formData.date_of_birth}
+                                        onChange={(e) => handleChange('date_of_birth', e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="gender" className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Gender</Label>
+                                    <Select
+                                        value={formData.gender}
+                                        onValueChange={(value) => handleChange('gender', value)}
+                                        required
+                                    >
+                                        <SelectTrigger id="gender" className="h-11 rounded-xl bg-white/40 dark:bg-slate-900/40 border-2 border-white/20 dark:border-slate-800 focus:border-indigo-500 font-bold">
+                                            <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-2xl border-white/20 backdrop-blur-3xl bg-white/95 dark:bg-slate-900/95 shadow-2xl">
+                                            <SelectItem value="male">Male</SelectItem>
+                                            <SelectItem value="female">Female</SelectItem>
+                                            <SelectItem value="non-binary">Non-binary</SelectItem>
+                                            <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="college_name">College Name</Label>
-                        <Input
-                            id="college_name"
-                            placeholder="Enter your college name"
-                            required
-                            value={formData.college_name}
-                            onChange={(e) => handleChange('college_name', e.target.value)}
-                        />
-                    </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="phone" className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Phone Number</Label>
+                                <Input
+                                    id="phone"
+                                    type="tel"
+                                    placeholder="+1 234 567 890"
+                                    required
+                                    className="h-11 rounded-xl bg-white/40 dark:bg-slate-900/40 border-2 border-white/20 dark:border-slate-800 focus:border-indigo-500 font-bold"
+                                    value={formData.phone}
+                                    onChange={(e) => handleChange('phone', e.target.value)}
+                                />
+                            </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="department">Department</Label>
-                            <Input
-                                id="department"
-                                placeholder="e.g. Computer Science"
-                                required
-                                value={formData.department}
-                                onChange={(e) => handleChange('department', e.target.value)}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="year_of_study">Year of Study</Label>
-                            <Select
-                                value={formData.year_of_study}
-                                onValueChange={(value) => handleChange('year_of_study', value)}
-                                required
-                            >
-                                <SelectTrigger id="year_of_study">
-                                    <SelectValue placeholder="Select year" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="1">1st Year</SelectItem>
-                                    <SelectItem value="2">2nd Year</SelectItem>
-                                    <SelectItem value="3">3rd Year</SelectItem>
-                                    <SelectItem value="4">4th Year</SelectItem>
-                                    <SelectItem value="5">5th Year+</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="college_name" className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">College / University</Label>
+                                <Input
+                                    id="college_name"
+                                    placeholder="e.g. Stanford University"
+                                    required
+                                    className="h-11 rounded-xl bg-white/40 dark:bg-slate-900/40 border-2 border-white/20 dark:border-slate-800 focus:border-indigo-500 font-bold"
+                                    value={formData.college_name}
+                                    onChange={(e) => handleChange('college_name', e.target.value)}
+                                />
+                            </div>
 
-                    <DialogFooter className="pt-4">
-                        <Button type="submit" className="w-full" disabled={submitting}>
-                            {submitting ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Saving...
-                                </>
-                            ) : (
-                                'Complete Profile'
-                            )}
-                        </Button>
-                    </DialogFooter>
-                </form>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="department" className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Department</Label>
+                                    <Input
+                                        id="department"
+                                        placeholder="e.g. Psychology"
+                                        required
+                                        className="h-11 rounded-xl bg-white/40 dark:bg-slate-900/40 border-2 border-white/20 dark:border-slate-800 focus:border-indigo-500 font-bold"
+                                        value={formData.department}
+                                        onChange={(e) => handleChange('department', e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="year_of_study" className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Year of Study</Label>
+                                    <Select
+                                        value={formData.year_of_study}
+                                        onValueChange={(value) => handleChange('year_of_study', value)}
+                                        required
+                                    >
+                                        <SelectTrigger id="year_of_study" className="h-11 rounded-xl bg-white/40 dark:bg-slate-900/40 border-2 border-white/20 dark:border-slate-800 focus:border-indigo-500 font-bold">
+                                            <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-2xl border-white/20 backdrop-blur-3xl bg-white/95 dark:bg-slate-900/95 shadow-2xl">
+                                            <SelectItem value="1">1st Year</SelectItem>
+                                            <SelectItem value="2">2nd Year</SelectItem>
+                                            <SelectItem value="3">3rd Year</SelectItem>
+                                            <SelectItem value="4">4th Year</SelectItem>
+                                            <SelectItem value="5">Grad / PG</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            <DialogFooter className="pt-4 flex flex-col items-center gap-4">
+                                <Button type="submit" className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black shadow-lg shadow-indigo-500/25 transition-all text-sm uppercase tracking-widest group" disabled={submitting}>
+                                    {submitting ? (
+                                        <Loader2 className="h-5 w-5 animate-spin" />
+                                    ) : (
+                                        <>Finalize Profile <Sparkles className="ml-2 h-4 w-4 group-hover:scale-125 transition-transform" /></>
+                                    )}
+                                </Button>
+                                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                                    <ShieldCheck className="h-3 w-3" /> Encrypted & Private
+                                </div>
+                            </DialogFooter>
+                        </form>
+                    </div>
+                </GlassCard>
             </DialogContent>
         </Dialog>
     )

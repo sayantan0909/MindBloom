@@ -1,22 +1,22 @@
 'use client';
 
 import { Button } from "@/components/ui/button";
-import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Bot, ClipboardList, BookOpen, Users } from "lucide-react";
+import { CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { ArrowRight, Bot, ClipboardList, BookOpen, Users, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useSupabaseUser } from "@/hooks/useSupabaseUser";
-import { WobbleCard } from "@/components/ui/wobble-card";
 import { GradientText } from "@/components/ui/gradient-text";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { GlassCard } from "@/components/dashboard/glass-card";
 
 export default function DashboardPage() {
   const { user, loading } = useSupabaseUser();
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px] bg-gradient-to-br from-purple-50 via-blue-50 to-cyan-50 dark:from-gray-900 dark:via-purple-950 dark:to-blue-950">
+      <div className="flex items-center justify-center min-h-[400px]">
         <motion.div
-          className="w-16 h-16 border-4 border-purple-500 dark:border-purple-400 border-t-transparent rounded-full"
+          className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full"
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         />
@@ -25,139 +25,163 @@ export default function DashboardPage() {
   }
 
   if (!user) {
-    return <div className="dark:text-white">Unauthorized</div>;
+    return <div className="text-slate-600 dark:text-slate-300 font-medium">Unauthorized access. Please sign in.</div>;
   }
 
-  return (
-    <div className="space-y-8 bg-gradient-to-br from-purple-50 via-blue-50 to-cyan-50 dark:from-gray-900 dark:via-purple-950 dark:to-blue-950 min-h-screen p-6 lg:p-8 transition-colors duration-200">
-      {/* Welcome Card */}
-      <motion.div
-        className="rounded-3xl bg-gradient-to-r from-purple-100/90 via-blue-100/90 to-cyan-100/90 dark:from-purple-900/40 dark:via-blue-900/40 dark:to-cyan-900/40 backdrop-blur-sm border border-purple-200/50 dark:border-purple-700/50 p-8 shadow-lg"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h1 className="text-3xl font-bold mb-2">
-          <GradientText colors={['#7c3aed', '#ec4899', '#3b82f6']}>
-            Welcome back, {user?.user_metadata?.name || user?.email || "Student"}
-          </GradientText>
-        </h1>
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
 
-        <p className="text-lg text-gray-700 dark:text-gray-200">
-          Remember, taking care of your mind is a journey, not a destination. We're here to support you every step of the way.
-        </p>
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
+  return (
+    <div className="space-y-10 min-h-screen">
+      {/* Welcome Hero Container */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      >
+        <GlassCard hover={false} className="p-10 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+            <Sparkles className="h-48 w-48 text-indigo-600" />
+          </div>
+          <div className="relative z-10 space-y-4">
+            <motion.h1
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="text-4xl md:text-5xl font-bold font-headline leading-tight"
+            >
+              <GradientText colors={['#6366f1', '#a855f7', '#ec4899']}>
+                Welcome back, {user?.user_metadata?.full_name?.split(' ')[0] || "Student"}
+              </GradientText>
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+              className="text-lg md:text-xl text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed"
+            >
+              "Your mental health is a priority. Your happiness is an essential. Your self-care is a necessity."
+              We're here to walk this journey with you.
+            </motion.p>
+          </div>
+        </GlassCard>
       </motion.div>
 
-      {/* Dashboard Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <WobbleCard containerClassName="bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/50 dark:to-purple-800/50 min-h-[300px] border border-purple-200 dark:border-purple-700/50 shadow-xl hover:shadow-2xl backdrop-blur-sm">
+      {/* Feature Grid */}
+      <motion.div
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="grid gap-8 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4"
+      >
+        {/* Screening Card */}
+        <motion.div variants={item}>
+          <GlassCard className="h-full flex flex-col">
             <CardHeader>
-              <div className="flex items-center gap-4">
-                <div className="bg-purple-300/60 dark:bg-purple-700 p-3 rounded-full">
-                  <ClipboardList className="h-6 w-6 text-purple-700 dark:text-purple-200" />
+              <div className="flex items-center gap-4 mb-2">
+                <div className="bg-indigo-100 dark:bg-indigo-900/50 p-4 rounded-2xl">
+                  <ClipboardList className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                 </div>
-                <CardTitle className="font-headline text-2xl text-purple-900 dark:text-purple-100">Mental Health Screening</CardTitle>
+                <CardTitle className="text-2xl font-semibold text-slate-800 dark:text-slate-100">Screening</CardTitle>
               </div>
-              <CardDescription className="pt-2 text-purple-800 dark:text-purple-200">
-                Check in with yourself. Take a confidential screening test for anxiety or depression.
+              <CardDescription className="text-base text-slate-500 dark:text-slate-400 leading-relaxed">
+                Take a confidential check-in for anxiety or depression with immediate results.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow flex items-end mt-4">
-              <Button asChild className="w-full bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white shadow-lg">
-                <Link href="/dashboard/screening">
-                  Start a Screening <ArrowRight className="ml-2 h-4 w-4" />
+            <CardContent className="mt-auto pt-4">
+              <Button asChild className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl h-12 text-md font-bold shadow-lg shadow-indigo-600/20 group">
+                <Link href="/dashboard/screening" className="flex items-center justify-center gap-2">
+                  Check In <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
             </CardContent>
-          </WobbleCard>
+          </GlassCard>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <WobbleCard containerClassName="bg-gradient-to-br from-blue-100 to-cyan-200 dark:from-blue-900/50 dark:to-cyan-800/50 min-h-[300px] border border-blue-200 dark:border-blue-700/50 shadow-xl hover:shadow-2xl backdrop-blur-sm">
+        {/* Resource Hub Card */}
+        <motion.div variants={item}>
+          <GlassCard className="h-full flex flex-col">
             <CardHeader>
-              <div className="flex items-center gap-4">
-                <div className="bg-blue-300/60 dark:bg-blue-700 p-3 rounded-full">
-                  <BookOpen className="h-6 w-6 text-blue-700 dark:text-blue-200" />
+              <div className="flex items-center gap-4 mb-2">
+                <div className="bg-purple-100 dark:bg-purple-900/50 p-4 rounded-2xl">
+                  <BookOpen className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                 </div>
-                <CardTitle className="font-headline text-2xl text-blue-900 dark:text-blue-100">Resource Hub</CardTitle>
+                <CardTitle className="text-2xl font-semibold text-slate-800 dark:text-slate-100">Explorer</CardTitle>
               </div>
-              <CardDescription className="pt-2 text-blue-800 dark:text-blue-200">
-                Explore a curated library of articles, videos, audios, and games for your well-being.
+              <CardDescription className="text-base text-slate-500 dark:text-slate-400 leading-relaxed">
+                A library of high-fidelity articles, videos, and audios tailored for your growth.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow flex items-end mt-4">
-              <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white shadow-lg">
-                <Link href="/dashboard/resources">
-                  Explore Resources <ArrowRight className="ml-2 h-4 w-4" />
+            <CardContent className="mt-auto pt-4">
+              <Button asChild className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-xl h-12 text-md font-bold shadow-lg shadow-purple-600/20 group">
+                <Link href="/dashboard/resources" className="flex items-center justify-center gap-2">
+                  Learn More <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
             </CardContent>
-          </WobbleCard>
+          </GlassCard>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <WobbleCard containerClassName="bg-gradient-to-br from-pink-100 to-rose-200 dark:from-pink-900/50 dark:to-rose-800/50 min-h-[300px] border border-pink-200 dark:border-pink-700/50 shadow-xl hover:shadow-2xl backdrop-blur-sm">
+        {/* AI Companion Card */}
+        <motion.div variants={item}>
+          <GlassCard className="h-full flex flex-col">
             <CardHeader>
-              <div className="flex items-center gap-4">
-                <div className="bg-pink-300/60 dark:bg-pink-700 p-3 rounded-full">
-                  <Bot className="h-6 w-6 text-pink-700 dark:text-pink-200" />
+              <div className="flex items-center gap-4 mb-2">
+                <div className="bg-pink-100 dark:bg-pink-900/50 p-4 rounded-2xl">
+                  <Bot className="h-6 w-6 text-pink-600 dark:text-pink-400" />
                 </div>
-                <CardTitle className="font-headline text-2xl text-pink-900 dark:text-pink-100">AI-Powered Chatbot</CardTitle>
+                <CardTitle className="text-2xl font-semibold text-slate-800 dark:text-slate-100">AI Support</CardTitle>
               </div>
-              <CardDescription className="pt-2 text-pink-800 dark:text-pink-200">
-                Need to talk? Our friendly chatbot is here to listen and provide support 24/7.
+              <CardDescription className="text-base text-slate-500 dark:text-slate-400 leading-relaxed">
+                Always available, empathetic AI listens and provides support whenever you need.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow flex items-end mt-4">
-              <Button asChild className="w-full bg-pink-600 hover:bg-pink-700 dark:bg-pink-500 dark:hover:bg-pink-600 text-white shadow-lg">
-                <Link href="/dashboard/chatbot">
-                  Start Chatting <ArrowRight className="ml-2 h-4 w-4" />
+            <CardContent className="mt-auto pt-4">
+              <Button asChild className="w-full bg-pink-600 hover:bg-pink-700 text-white rounded-xl h-12 text-md font-bold shadow-lg shadow-pink-600/20 group">
+                <Link href="/dashboard/chatbot" className="flex items-center justify-center gap-2">
+                  Talk to AI <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
             </CardContent>
-          </WobbleCard>
+          </GlassCard>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <WobbleCard containerClassName="bg-gradient-to-br from-indigo-100 to-blue-200 dark:from-indigo-900/50 dark:to-blue-800/50 min-h-[300px] border border-indigo-200 dark:border-indigo-700/50 shadow-xl hover:shadow-2xl backdrop-blur-sm">
+        {/* Peer Support Card */}
+        <motion.div variants={item}>
+          <GlassCard className="h-full flex flex-col highlight-emerald">
             <CardHeader>
-              <div className="flex items-center gap-4">
-                <div className="bg-indigo-300/60 dark:bg-indigo-700 p-3 rounded-full">
-                  <Users className="h-6 w-6 text-indigo-700 dark:text-indigo-200" />
+              <div className="flex items-center gap-4 mb-2">
+                <div className="bg-emerald-100 dark:bg-emerald-900/50 p-4 rounded-2xl">
+                  <Users className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <CardTitle className="font-headline text-2xl text-indigo-900 dark:text-indigo-100">Peer Support</CardTitle>
+                <CardTitle className="text-2xl font-semibold text-slate-800 dark:text-slate-100">Community</CardTitle>
               </div>
-              <CardDescription className="pt-2 text-indigo-800 dark:text-indigo-200">
-                Connect anonymously with fellow students who understand what you're going through.
+              <CardDescription className="text-base text-slate-500 dark:text-slate-400 leading-relaxed">
+                Join anonymous safe-spaces to connect with other students on similar journeys.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow flex items-end mt-4">
-              <Button asChild className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white shadow-lg">
-                <Link href="/dashboard/peer-support">
-                  Connect Now <ArrowRight className="ml-2 h-4 w-4" />
+            <CardContent className="mt-auto pt-4">
+              <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-12 text-md font-bold shadow-lg shadow-emerald-600/20 group">
+                <Link href="/dashboard/peer-support" className="flex items-center justify-center gap-2">
+                  Find Peers <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
             </CardContent>
-          </WobbleCard>
+          </GlassCard>
         </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 }

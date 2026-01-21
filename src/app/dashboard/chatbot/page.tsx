@@ -3,11 +3,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bot, User, Send, Loader2 } from 'lucide-react';
+import { Bot, User, Send, Loader2, Sparkles, ShieldCheck } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { motion, AnimatePresence } from 'framer-motion';
+import { GlassCard } from '@/components/dashboard/glass-card';
+import { GradientText } from '@/components/ui/gradient-text';
 
 type Message = {
   role: 'user' | 'model';
@@ -27,12 +28,7 @@ export default function ChatbotPage() {
 
   useEffect(() => {
     if (scrollAreaRef.current) {
-      const viewport = scrollAreaRef.current.querySelector(
-        'div[data-radix-scroll-area-viewport]'
-      );
-      if (viewport) {
-        viewport.scrollTop = viewport.scrollHeight;
-      }
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   }, [messages, isLoading]);
 
@@ -93,110 +89,141 @@ export default function ChatbotPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col">
-      <div className="text-center mb-4">
-        <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
-          <Bot className="h-10 w-10 text-primary" />
-        </div>
-        <h1 className="text-3xl md:text-4xl font-bold font-headline">
-          AI-Driven Chatbot
-        </h1>
-        <p className="text-muted-foreground mt-2 text-lg max-w-3xl mx-auto">
-          Your confidential space to talk. I'm here to offer support, suggest
-          coping strategies, and guide you to resources.
-        </p>
-      </div>
+    <div className="min-h-screen py-6 px-4 md:px-8 flex flex-col">
+      <div className="max-w-7xl mx-auto w-full flex-grow flex flex-col space-y-10">
+        {/* Header Section */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center space-y-6"
+        >
+          <motion.div
+            whileHover={{ scale: 1.05, rotate: 5 }}
+            className="mx-auto bg-gradient-to-br from-pink-500 to-rose-600 p-6 rounded-[2rem] w-fit shadow-2xl shadow-rose-500/20"
+          >
+            <Bot className="h-12 w-12 text-white" />
+          </motion.div>
 
-      <div className="flex-grow flex items-center justify-center">
-        <Card className="w-full max-w-3xl h-full flex flex-col shadow-2xl">
-          <CardHeader>
-            <CardTitle>MindBloom AI Assistant</CardTitle>
-            <CardDescription>
-              This is a safe space. All conversations are confidential.
-            </CardDescription>
-          </CardHeader>
+          <h1 className="text-4xl md:text-6xl font-bold font-headline tracking-tight">
+            <GradientText colors={['#ec4899', '#f43f5e', '#a855f7']}>
+              AI Companion
+            </GradientText>
+          </h1>
 
-          <div className="flex-grow flex flex-col">
-            <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
-              <div className="space-y-6">
+          <p className="text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
+            Your confidential, high-fidelity space to talk. I'm here to offer empathetic support and guide you to resources.
+          </p>
+        </motion.div>
+
+        {/* Chat Interface */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="flex-grow flex flex-col max-w-4xl mx-auto w-full"
+        >
+          <GlassCard className="flex-grow h-[600px] flex flex-col border-white/60 dark:border-slate-700/60 rounded-[2.5rem] shadow-2xl relative overflow-hidden" hover={false}>
+            {/* Chat Top Bar */}
+            <div className="px-6 py-4 border-b border-white/20 dark:border-slate-700/20 flex items-center justify-between bg-white/20 dark:bg-slate-900/20 backdrop-blur-md">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-pink-500 to-rose-500 flex items-center justify-center shadow-md">
+                  <Bot className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 dark:text-slate-100">MindBloom AI</h3>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Encrypted</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Messages Area */}
+            <div
+              ref={scrollAreaRef}
+              className="flex-grow overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800"
+            >
+              <AnimatePresence initial={false}>
                 {messages.map((message, index) => (
-                  <div
+                  <motion.div
                     key={index}
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.3 }}
                     className={cn(
-                      'flex items-start gap-3',
-                      message.role === 'user'
-                        ? 'justify-end'
-                        : 'justify-start'
+                      "flex items-end gap-3",
+                      message.role === 'user' ? "flex-row-reverse" : "flex-row"
                     )}
                   >
-                    {message.role === 'model' && (
-                      <Avatar className="w-8 h-8 bg-primary/20 text-primary">
-                        <AvatarFallback>
-                          <Bot size={20} />
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
-
-                    <div
-                      className={cn(
-                        'max-w-sm md:max-w-md lg:max-w-lg rounded-2xl px-4 py-3 whitespace-pre-wrap',
-                        message.role === 'user'
-                          ? 'bg-primary text-primary-foreground rounded-br-none'
-                          : 'bg-card border rounded-bl-none'
-                      )}
-                    >
-                      <p className="text-sm leading-relaxed">
-                        {message.content}
-                      </p>
-                    </div>
-
-                    {message.role === 'user' && (
-                      <Avatar className="w-8 h-8">
-                        <AvatarFallback>
-                          <User size={20} />
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
-                  </div>
-                ))}
-
-                {isLoading && (
-                  <div className="flex items-start gap-3 justify-start">
-                    <Avatar className="w-8 h-8 bg-primary/20 text-primary">
-                      <AvatarFallback>
-                        <Bot size={20} />
+                    <Avatar className={cn(
+                      "w-8 h-8 border shadow-sm",
+                      message.role === 'user' ? "bg-white dark:bg-slate-800" : "bg-gradient-to-tr from-pink-500 to-rose-500"
+                    )}>
+                      <AvatarFallback className="bg-transparent">
+                        {message.role === 'user' ? <User className="h-4 w-4 text-slate-600 dark:text-slate-300" /> : <Bot className="h-4 w-4 text-white" />}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="max-w-sm rounded-2xl px-4 py-3 bg-card border rounded-bl-none flex items-center">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
 
-            <div className="p-4 border-t">
+                    <div className={cn(
+                      "max-w-[80%] px-5 py-3 rounded-2xl shadow-sm text-sm leading-relaxed",
+                      message.role === 'user'
+                        ? "bg-indigo-600 text-white rounded-br-none"
+                        : "bg-white/80 dark:bg-slate-800/80 text-slate-800 dark:text-slate-100 border border-white/20 dark:border-slate-700/20 rounded-bl-none backdrop-blur-sm"
+                    )}>
+                      {message.content}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+
+              {isLoading && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex items-center gap-3"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 to-rose-600 flex items-center justify-center">
+                    <Bot className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="bg-white/80 dark:bg-slate-800/80 px-4 py-2 rounded-2xl rounded-bl-none border border-white/20 dark:border-slate-700/20">
+                    <Loader2 className="h-4 w-4 animate-spin text-rose-500" />
+                  </div>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Input Area */}
+            <div className="p-6 border-t border-white/20 dark:border-slate-700/20 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl">
               <form
                 onSubmit={handleSendMessage}
-                className="flex items-center gap-2"
+                className="relative flex items-center gap-3"
               >
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-rose-500">
+                  <Sparkles className="h-5 w-5 opacity-50" />
+                </div>
                 <Input
                   value={input}
                   onChange={e => setInput(e.target.value)}
-                  placeholder="Type how you're feeling..."
-                  autoComplete="off"
+                  placeholder="Share your thoughts..."
+                  className="flex-grow h-14 pl-12 pr-20 rounded-2xl border-2 border-white/40 dark:border-slate-700/40 bg-white/60 dark:bg-slate-800/60 focus-visible:ring-rose-500 focus-visible:border-rose-500 dark:text-white transition-all shadow-inner"
                   disabled={isLoading}
                 />
                 <Button
                   type="submit"
                   disabled={isLoading || !input.trim()}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 p-0 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white shadow-lg active:scale-95 transition-all"
                 >
-                  <Send className="h-4 w-4" />
+                  <Send className="h-5 w-5" />
                 </Button>
               </form>
+              <div className="mt-4 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <ShieldCheck className="h-3 w-3" />
+                Secure & Anonymous Channel
+              </div>
             </div>
-          </div>
-        </Card>
+          </GlassCard>
+        </motion.div>
       </div>
     </div>
   );

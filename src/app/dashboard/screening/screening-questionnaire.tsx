@@ -3,14 +3,15 @@
 import { useState } from 'react';
 import { ScreeningTool } from '@/lib/data';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, RefreshCw, ChevronRight, BookOpen, CalendarCheck } from 'lucide-react';
+import { ArrowLeft, RefreshCw, ChevronRight, BookOpen, CalendarCheck, Sparkles, Activity } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { GlassCard } from '@/components/dashboard/glass-card';
+import { GradientText } from '@/components/ui/gradient-text';
 
 interface ScreeningQuestionnaireProps {
   testData: ScreeningTool;
@@ -28,6 +29,8 @@ export function ScreeningQuestionnaire({ testData, onComplete, onBack }: Screeni
 
   const handleAnswerChange = (questionId: number, value: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: parseInt(value, 10) }));
+    // Auto-advance after small delay for better UX? Or just wait for button.
+    // Let's stick to the button for now to avoid accidental skips.
   };
 
   const handleNext = () => {
@@ -54,125 +57,218 @@ export function ScreeningQuestionnaire({ testData, onComplete, onBack }: Screeni
 
 
   return (
-    <Card className="max-w-2xl mx-auto shadow-2xl overflow-hidden">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-            <Button variant="ghost" size="sm" onClick={onBack} className="h-8 w-8 p-0">
-               <ArrowLeft className="h-4 w-4" />
+    <div className="max-w-3xl mx-auto">
+      <GlassCard className="overflow-hidden" hover={false}>
+        <div className="p-6 md:p-8 space-y-8">
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onBack}
+              className="hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full"
+            >
+              <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="text-center">
-                <CardTitle className="text-xl md:text-2xl font-headline">{testData.name}</CardTitle>
+              <h2 className="text-2xl font-bold font-headline">
+                <GradientText colors={['#6366f1', '#a855f7']}>
+                  {testData.name}
+                </GradientText>
+              </h2>
             </div>
-            <div className="w-8"></div>
-        </div>
-        <div className="mt-4 space-y-2">
-            <p className="text-center text-sm text-muted-foreground">Question {currentQuestionIndex + 1} of {totalQuestions}</p>
-            <Progress value={((currentQuestionIndex + 1) / totalQuestions) * 100} className="w-full h-2" />
-        </div>
-      </CardHeader>
-      <div className="relative h-64">
-        <AnimatePresence mode="wait">
-            <motion.div
+            <div className="w-10"></div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex justify-between text-sm font-medium text-slate-500 dark:text-slate-400">
+              <span>Progress</span>
+              <span>{currentQuestionIndex + 1} of {totalQuestions}</span>
+            </div>
+            <div className="relative h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <motion.div
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                initial={{ width: 0 }}
+                animate={{ width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%` }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+              />
+            </div>
+          </div>
+
+          <div className="relative min-h-[300px]">
+            <AnimatePresence mode="wait">
+              <motion.div
                 key={currentQuestionIndex}
-                initial={{ opacity: 0, x: 50 }}
+                initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -50 }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className="absolute w-full"
-            >
-              <CardContent className="space-y-4 px-6 md:px-8">
-                <p className="font-medium text-lg text-center h-16 flex items-center justify-center">{currentQuestion.text}?</p>
-                <RadioGroup 
-                    onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
-                    value={answers[currentQuestion.id]?.toString()}
-                    className="flex flex-col sm:flex-row sm:justify-between sm:gap-4 space-y-2 sm:space-y-0"
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-8"
+              >
+                <div className="text-center space-y-2">
+                  <p className="text-2xl font-semibold leading-tight text-slate-800 dark:text-slate-100">
+                    {currentQuestion.text}?
+                  </p>
+                </div>
+
+                <RadioGroup
+                  onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
+                  value={answers[currentQuestion.id]?.toString()}
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                 >
-                  {testData.responses.map(r => (
-                    <Label key={r.value} className="flex items-center justify-center space-x-2 border p-3 rounded-md hover:bg-accent hover:text-accent-foreground has-[input:checked]:bg-primary has-[input:checked]:text-primary-foreground has-[input:checked]:border-primary flex-1 cursor-pointer transition-colors duration-200">
-                      <RadioGroupItem value={r.value.toString()} id={`${currentQuestion.id}-${r.value}`} />
-                      <span>{r.text}</span>
-                    </Label>
-                  ))}
+                  {testData.responses.map(r => {
+                    const isSelected = answers[currentQuestion.id] === r.value;
+                    return (
+                      <Label
+                        key={r.value}
+                        className={cn(
+                          "flex items-center justify-center p-4 rounded-2xl border-2 transition-all duration-200 cursor-pointer group",
+                          isSelected
+                            ? "bg-indigo-50/50 dark:bg-indigo-900/20 border-indigo-500 shadow-md shadow-indigo-500/10"
+                            : "bg-white/40 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/50 hover:border-indigo-300 dark:hover:border-indigo-700"
+                        )}
+                      >
+                        <RadioGroupItem value={r.value.toString()} id={`${currentQuestion.id}-${r.value}`} className="sr-only" />
+                        <span className={cn(
+                          "text-base font-medium transition-colors",
+                          isSelected ? "text-indigo-600 dark:text-indigo-400" : "text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200"
+                        )}>
+                          {r.text}
+                        </span>
+                      </Label>
+                    );
+                  })}
                 </RadioGroup>
-              </CardContent>
-            </motion.div>
-        </AnimatePresence>
-      </div>
-      <CardFooter>
-        <Button onClick={handleNext} disabled={answers[currentQuestion.id] === undefined} className="w-full">
-            {isLastQuestion ? 'View Results' : 'Next'} <ChevronRight className="ml-2 h-4 w-4" />
-        </Button>
-      </CardFooter>
-    </Card>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          <div className="pt-4">
+            <Button
+              onClick={handleNext}
+              disabled={answers[currentQuestion.id] === undefined}
+              className="w-full h-14 text-lg font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-2xl shadow-xl shadow-indigo-500/20 group"
+            >
+              {isLastQuestion ? 'View Results' : 'Next Question'}
+              {isLastQuestion ? <Sparkles className="ml-2 h-5 w-5" /> : <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />}
+            </Button>
+          </div>
+        </div>
+      </GlassCard>
+    </div>
   );
 }
 
 interface ResultsDisplayProps {
-    score: number;
-    result: string;
-    testData: ScreeningTool;
-    onReset: () => void;
+  score: number;
+  result: string;
+  testData: ScreeningTool;
+  onReset: () => void;
 }
 
 export function ResultsDisplay({ score, result, testData, onReset }: ResultsDisplayProps) {
-    const maxScore = testData.questions.length * (testData.responses.length - 1);
-    
-    let scoreColor = "text-green-600";
-    let bgColor = "bg-green-100/50";
-    if (result.toLowerCase().includes("mild")) {
-        scoreColor = "text-yellow-600";
-        bgColor = "bg-yellow-100/50";
-    }
-    if (result.toLowerCase().includes("moderate")) {
-        scoreColor = "text-orange-600";
-        bgColor = "bg-orange-100/50";
-    }
-    if (result.toLowerCase().includes("severe")) {
-        scoreColor = "text-red-600";
-        bgColor = "bg-red-100/50";
-    }
+  const maxScore = testData.questions.length * (testData.responses.length - 1);
 
-    const description = testData.scoring[Object.keys(testData.scoring).find(range => {
-        const [min, max] = range.split('-').map(Number);
-        return score >= min && score <= max;
-    }) || "0-0"]?.description || "No description available.";
+  let scoreColor = "text-emerald-500";
+  let scoreBg = "bg-emerald-500/10 dark:bg-emerald-500/20";
+  let scoreBorder = "border-emerald-500/30";
+
+  if (result.toLowerCase().includes("mild")) {
+    scoreColor = "text-amber-500";
+    scoreBg = "bg-amber-500/10 dark:bg-amber-500/20";
+    scoreBorder = "border-amber-500/30";
+  }
+  if (result.toLowerCase().includes("moderate")) {
+    scoreColor = "text-orange-500";
+    scoreBg = "bg-orange-500/10 dark:bg-orange-500/20";
+    scoreBorder = "border-orange-500/30";
+  }
+  if (result.toLowerCase().includes("severe")) {
+    scoreColor = "text-rose-500";
+    scoreBg = "bg-rose-500/10 dark:bg-rose-500/20";
+    scoreBorder = "border-rose-500/30";
+  }
+
+  const description = testData.scoring[Object.keys(testData.scoring).find(range => {
+    const [min, max] = range.split('-').map(Number);
+    return score >= min && score <= max;
+  }) || "0-0"]?.description || "No description available.";
 
 
-    return (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <Card className="max-w-2xl mx-auto shadow-2xl">
-                <CardHeader className="text-center">
-                    <CardTitle className="text-2xl font-headline">Screening Results</CardTitle>
-                    <CardDescription>{testData.name}</CardDescription>
-                </CardHeader>
-                <CardContent className={cn("text-center p-6 rounded-lg m-6", bgColor)}>
-                    <p className="text-muted-foreground">Your Score</p>
-                    <p className={`text-7xl font-bold ${scoreColor}`}>{score}</p>
-                    <p className="text-xl font-semibold mt-2">{result}</p>
-                    <Progress value={(score / maxScore) * 100} className="mt-4" />
-                </CardContent>
-                <CardContent>
-                    <div className="text-left mt-0 bg-secondary/50 p-4 rounded-lg">
-                        <h4 className="font-semibold mb-2">What this might mean:</h4>
-                        <p className="text-muted-foreground">{description}</p>
-                    </div>
-                </CardContent>
-                <CardFooter className="flex-col sm:flex-row gap-2">
-                    <Button asChild className="w-full sm:w-auto flex-1">
-                        <Link href="/dashboard/booking">
-                            <CalendarCheck className="mr-2 h-4 w-4" /> Book Counselor
-                        </Link>
-                    </Button>
-                    <Button asChild variant="secondary" className="w-full sm:w-auto flex-1">
-                        <Link href="/dashboard/resources">
-                            <BookOpen className="mr-2 h-4 w-4" /> View Resources
-                        </Link>
-                    </Button>
-                     <Button onClick={onReset} variant="outline" className="w-full sm:w-auto flex-1">
-                        <RefreshCw className="mr-2 h-4 w-4" /> Take Another Test
-                    </Button>
-                </CardFooter>
-            </Card>
-        </motion.div>
-    );
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="max-w-3xl mx-auto"
+    >
+      <GlassCard className="overflow-hidden" hover={false}>
+        <div className="p-8 space-y-10">
+          <div className="text-center space-y-2">
+            <h2 className="text-3xl font-bold font-headline">
+              <GradientText colors={['#7c3aed', '#ec4899']}>
+                Your Results
+              </GradientText>
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 font-medium">{testData.name}</p>
+          </div>
+
+          <div className={cn("relative p-10 rounded-[2.5rem] text-center border overflow-hidden", scoreBg, scoreBorder)}>
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+              <Activity className="h-40 w-40" />
+            </div>
+
+            <div className="relative z-10 space-y-4">
+              <p className="text-slate-500 dark:text-slate-300 font-medium uppercase tracking-widest text-sm">Mental Health Score</p>
+              <div className="flex items-center justify-center gap-2">
+                <span className={cn("text-8xl font-black font-headline tabular-nums", scoreColor)}>{score}</span>
+                <span className="text-2xl font-bold text-slate-400 mt-8">/ {maxScore}</span>
+              </div>
+              <div className={cn("inline-block px-6 py-2 rounded-full font-bold text-lg", scoreColor, "bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm shadow-sm")}>
+                {result}
+              </div>
+            </div>
+
+            <div className="mt-8 px-4">
+              <div className="h-3 bg-white/30 dark:bg-slate-700/50 rounded-full overflow-hidden">
+                <motion.div
+                  className={cn("h-full", scoreColor.replace("text-", "bg-"))}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(score / maxScore) * 100}%` }}
+                  transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/40 dark:bg-slate-800/40 p-6 rounded-2xl border border-white/20 dark:border-slate-700/30">
+            <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-indigo-500" />
+              What this means for you
+            </h4>
+            <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+              {description}
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Button asChild className="flex-1 h-14 text-lg font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg shadow-indigo-500/20">
+              <Link href="/dashboard/booking">
+                <CalendarCheck className="mr-2 h-5 w-5" /> Book Counselor
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="flex-1 h-14 text-lg font-bold border-2 rounded-2xl">
+              <Link href="/dashboard/resources">
+                <BookOpen className="mr-2 h-5 w-5" /> View Resources
+              </Link>
+            </Button>
+          </div>
+
+          <div className="flex justify-center">
+            <Button onClick={onReset} variant="ghost" className="text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400">
+              <RefreshCw className="mr-2 h-4 w-4" /> Take Another Test
+            </Button>
+          </div>
+        </div>
+      </GlassCard>
+    </motion.div>
+  );
 }

@@ -26,13 +26,14 @@ export function Galaxy({
     repulsionStrength = 2,
     twinkleIntensity = 0.3,
 }: GalaxyProps) {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        const ctx = canvas.getContext('2d');
+        const safeCanvas = canvas; // ✅ NON-NULL GUARANTEE
+        const ctx = safeCanvas.getContext('2d');
         if (!ctx) return;
 
         let animationFrameId: number;
@@ -40,13 +41,13 @@ export function Galaxy({
         let mouseY = 0;
 
         const resize = () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            safeCanvas.width = window.innerWidth;
+            safeCanvas.height = window.innerHeight;
         };
+
         resize();
         window.addEventListener('resize', resize);
 
-        // Star class
         class Star {
             x: number;
             y: number;
@@ -58,8 +59,8 @@ export function Galaxy({
             twinkleSpeed: number;
 
             constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
+                this.x = Math.random() * safeCanvas.width;
+                this.y = Math.random() * safeCanvas.height;
                 this.z = Math.random() * 2000;
                 this.size = Math.random() * 2;
                 this.baseX = this.x;
@@ -72,45 +73,49 @@ export function Galaxy({
                 this.z -= starSpeed;
                 if (this.z <= 0) {
                     this.z = 2000;
-                    this.x = Math.random() * canvas.width;
-                    this.y = Math.random() * canvas.height;
+                    this.x = Math.random() * safeCanvas.width;
+                    this.y = Math.random() * safeCanvas.height;
                     this.baseX = this.x;
                     this.baseY = this.y;
                 }
 
-                // Mouse repulsion
                 if (mouseRepulsion) {
                     const dx = this.baseX - mouseX;
                     const dy = this.baseY - mouseY;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    const force = (repulsionStrength * 100) / (distance + 1);
+                    const distance = Math.sqrt(dx * dx + dy * dy) || 1;
+                    const force = (repulsionStrength * 100) / distance;
 
                     this.x = this.baseX + (dx / distance) * force;
                     this.y = this.baseY + (dy / distance) * force;
                 }
 
-                // Twinkle
                 this.twinkle += this.twinkleSpeed;
             }
 
             draw() {
                 const scale = 1000 / (1000 + this.z);
-                const x2d = (this.x - canvas.width / 2) * scale + canvas.width / 2;
-                const y2d = (this.y - canvas.height / 2) * scale + canvas.height / 2;
+                const x2d = (this.x - safeCanvas.width / 2) * scale + safeCanvas.width / 2;
+                const y2d = (this.y - safeCanvas.height / 2) * scale + safeCanvas.height / 2;
 
-                if (x2d < 0 || x2d > canvas.width || y2d < 0 || y2d > canvas.height) {
+                if (
+                    x2d < 0 ||
+                    x2d > safeCanvas.width ||
+                    y2d < 0 ||
+                    y2d > safeCanvas.height
+                ) {
                     return;
                 }
 
                 const size = this.size * scale;
                 const brightness = 1 - this.z / 2000;
-                const twinkleBrightness = Math.sin(this.twinkle) * twinkleIntensity + (1 - twinkleIntensity);
+                const twinkleBrightness =
+                    Math.sin(this.twinkle) * twinkleIntensity + (1 - twinkleIntensity);
                 const alpha = brightness * twinkleBrightness;
 
-                // Color based on hue shift
                 const hue = (hueShift + (this.z / 2000) * 60) % 360;
 
-                ctx.fillStyle = `hsla(${hue}, ${saturation * 100}%, ${50 + brightness * 50}%, ${alpha})`;
+                ctx.fillStyle = `hsla(${hue}, ${saturation * 100}%, ${50 + brightness * 50
+                    }%, ${alpha})`;
                 ctx.shadowBlur = glowIntensity * 10;
                 ctx.shadowColor = `hsl(${hue}, ${saturation * 100}%, 70%)`;
 
@@ -120,32 +125,34 @@ export function Galaxy({
             }
         }
 
-        // Create stars
-        const starCount = Math.floor((canvas.width * canvas.height) / 10000 * density);
+        const starCount = Math.floor(
+            (safeCanvas.width * safeCanvas.height) / 10000 * density
+        );
+
         const stars: Star[] = [];
         for (let i = 0; i < starCount; i++) {
             stars.push(new Star());
         }
 
-        // Animation loop
         const animate = () => {
-            ctx.fillStyle = 'rgba(10, 5, 18, 0.3)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(10, 5, 18, 0.35)';
+            ctx.fillRect(0, 0, safeCanvas.width, safeCanvas.height);
 
-            stars.forEach(star => {
+            stars.forEach((star) => {
                 star.update();
                 star.draw();
             });
 
             animationFrameId = requestAnimationFrame(animate);
         };
+
         animate();
 
-        // Mouse tracking
         const handleMouseMove = (e: MouseEvent) => {
             mouseX = e.clientX;
             mouseY = e.clientY;
         };
+
         if (mouseRepulsion) {
             window.addEventListener('mousemove', handleMouseMove);
         }
@@ -155,16 +162,24 @@ export function Galaxy({
             window.removeEventListener('mousemove', handleMouseMove);
             cancelAnimationFrame(animationFrameId);
         };
-    }, [starSpeed, density, hueShift, glowIntensity, saturation, mouseRepulsion, repulsionStrength, twinkleIntensity]);
+    }, [
+        starSpeed,
+        density,
+        hueShift,
+        glowIntensity,
+        saturation,
+        mouseRepulsion,
+        repulsionStrength,
+        twinkleIntensity,
+    ]);
 
     return (
         <>
             <canvas
                 ref={canvasRef}
-                className={cn('fixed inset-0 -z-10', className)}
+                className={cn('fixed inset-0 z-0', className)}
             />
-            {/* Gradient overlay for text readability */}
-            <div className="fixed inset-0 -z-10 bg-gradient-to-b from-black/50 via-transparent to-black/80 pointer-events-none" />
+            <div className="fixed inset-0 z-0 bg-gradient-to-b from-black/40 via-transparent to-black/80 pointer-events-none" />
         </>
     );
 }
