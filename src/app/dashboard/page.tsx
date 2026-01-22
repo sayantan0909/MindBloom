@@ -67,7 +67,7 @@ export default function DashboardPage() {
   }
 
   if (!user) {
-    return <div className="text-slate-600 dark:text-slate-300 font-medium">Unauthorized access. Please sign in.</div>;
+    return <div className="text-slate-700 font-medium">Unauthorized access. Please sign in.</div>;
   }
 
   const container = {
@@ -100,8 +100,8 @@ export default function DashboardPage() {
           className="p-10 relative overflow-hidden group transition-all duration-500 hover:scale-[1.005] hover:shadow-2xl"
         >
           {/* Atmospheric Glow Effects */}
-          <div className="absolute -left-20 -top-20 h-72 w-72 rounded-full bg-indigo-400/20 dark:bg-indigo-600/20 blur-3xl pointer-events-none" />
-          <div className="absolute -right-20 -bottom-20 h-72 w-72 rounded-full bg-purple-400/15 dark:bg-purple-600/15 blur-3xl pointer-events-none" />
+          <div className="absolute -left-20 -top-20 h-72 w-72 rounded-full bg-indigo-400/20 blur-3xl pointer-events-none" />
+          <div className="absolute -right-20 -bottom-20 h-72 w-72 rounded-full bg-purple-400/15 blur-3xl pointer-events-none" />
 
           {/* Sparkles Background */}
           <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity duration-700">
@@ -163,7 +163,7 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5, duration: 0.5 }}
               >
-                <p className="text-sm text-indigo-600 dark:text-indigo-400 font-medium inline-block bg-indigo-50 dark:bg-indigo-900/30 px-4 py-2 rounded-full">
+                <p className="text-sm text-indigo-700 font-medium inline-block bg-indigo-50 px-4 py-2 rounded-full">
                   You showed up today — that matters 🤍
                 </p>
               </motion.div>
@@ -173,7 +173,7 @@ export default function DashboardPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.7, duration: 0.5 }}
-                className="text-lg md:text-xl text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed font-medium"
+                className="text-lg md:text-xl text-slate-700 max-w-2xl leading-relaxed font-medium"
               >
                 {affirmation}
               </motion.p>
@@ -183,7 +183,7 @@ export default function DashboardPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.9, duration: 0.5 }}
-                className="text-base md:text-lg text-slate-500 dark:text-slate-400 max-w-2xl leading-relaxed italic"
+                className="text-base md:text-lg text-slate-600 max-w-2xl leading-relaxed italic"
               >
                 "Your mental health is a priority. Your happiness is an essential. Your self-care is a necessity."
                 We're here to walk this journey with you.
@@ -196,13 +196,13 @@ export default function DashboardPage() {
                 transition={{ delay: 1.1, duration: 0.5 }}
                 className="pt-4"
               >
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
+                <p className="text-sm text-slate-600 mb-3">
                   How are you feeling right now?
                 </p>
                 <Button
                   asChild
                   variant="ghost"
-                  className="text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-all duration-300"
+                  className="text-indigo-600 hover:bg-indigo-50 transition-all duration-300"
                 >
                   <Link href="/dashboard/screening" className="flex items-center gap-2">
                     Check in with yourself
@@ -272,8 +272,8 @@ export default function DashboardPage() {
               </div>
 
               {/* Mood Selector */}
-              <div className="w-full bg-white/50 dark:bg-slate-800/30 backdrop-blur-sm rounded-2xl p-5 border border-slate-200/50 dark:border-slate-700/50">
-                <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mb-3 text-center">
+              <div className="w-full bg-white/50 backdrop-blur-sm rounded-2xl p-5 border border-slate-200/50">
+                <p className="text-sm font-medium text-slate-700 mb-3 text-center">
                   Quick mood check-in
                 </p>
 
@@ -291,14 +291,14 @@ export default function DashboardPage() {
                         relative flex flex-col items-center gap-1 p-3 rounded-xl
                         transition-all duration-300
                         ${selectedMood === mood.id
-                          ? 'bg-indigo-100 dark:bg-indigo-900/40 ring-2 ring-indigo-500'
-                          : 'bg-slate-50 dark:bg-slate-700/30 hover:bg-slate-100 dark:hover:bg-slate-700/50'
+                          ? 'bg-indigo-100 ring-2 ring-indigo-500'
+                          : 'bg-slate-50 hover:bg-slate-100'
                         }
                       `}
                       aria-label={`Select ${mood.label} mood`}
                     >
                       <span className="text-2xl">{mood.emoji}</span>
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                      <span className="text-xs font-medium text-slate-700">
                         {mood.label}
                       </span>
 
@@ -328,7 +328,7 @@ export default function DashboardPage() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="text-xs text-center text-slate-500 dark:text-slate-400 mt-3"
+                      className="text-xs text-center text-slate-600 mt-3"
                     >
                       Thanks for sharing. We're here for you. 💙
                     </motion.p>
@@ -352,12 +352,12 @@ export default function DashboardPage() {
           <GlassCard className="h-full flex flex-col transition-all duration-300 hover:scale-[1.02]">
             <CardHeader>
               <div className="flex items-center gap-4 mb-2">
-                <div className="bg-indigo-100 dark:bg-indigo-900/50 p-4 rounded-2xl">
-                  <ClipboardList className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                <div className="bg-indigo-100 p-4 rounded-2xl">
+                  <ClipboardList className="h-6 w-6 text-indigo-600" />
                 </div>
-                <CardTitle className="text-2xl font-semibold text-slate-800 dark:text-slate-100">Screening</CardTitle>
+                <CardTitle className="text-2xl font-semibold text-slate-800">Screening</CardTitle>
               </div>
-              <CardDescription className="text-base text-slate-500 dark:text-slate-400 leading-relaxed">
+              <CardDescription className="text-base text-slate-600 leading-relaxed">
                 Take a confidential check-in for anxiety or depression with immediate results.
               </CardDescription>
             </CardHeader>
@@ -376,12 +376,12 @@ export default function DashboardPage() {
           <GlassCard className="h-full flex flex-col transition-all duration-300 hover:scale-[1.02]">
             <CardHeader>
               <div className="flex items-center gap-4 mb-2">
-                <div className="bg-purple-100 dark:bg-purple-900/50 p-4 rounded-2xl">
-                  <BookOpen className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                <div className="bg-purple-100 p-4 rounded-2xl">
+                  <BookOpen className="h-6 w-6 text-purple-600" />
                 </div>
-                <CardTitle className="text-2xl font-semibold text-slate-800 dark:text-slate-100">Explorer</CardTitle>
+                <CardTitle className="text-2xl font-semibold text-slate-800">Explorer</CardTitle>
               </div>
-              <CardDescription className="text-base text-slate-500 dark:text-slate-400 leading-relaxed">
+              <CardDescription className="text-base text-slate-600 leading-relaxed">
                 A library of high-fidelity articles, videos, and audios tailored for your growth.
               </CardDescription>
             </CardHeader>
@@ -400,12 +400,12 @@ export default function DashboardPage() {
           <GlassCard className="h-full flex flex-col transition-all duration-300 hover:scale-[1.02]">
             <CardHeader>
               <div className="flex items-center gap-4 mb-2">
-                <div className="bg-pink-100 dark:bg-pink-900/50 p-4 rounded-2xl">
-                  <Bot className="h-6 w-6 text-pink-600 dark:text-pink-400" />
+                <div className="bg-pink-100 p-4 rounded-2xl">
+                  <Bot className="h-6 w-6 text-pink-600" />
                 </div>
-                <CardTitle className="text-2xl font-semibold text-slate-800 dark:text-slate-100">AI Support</CardTitle>
+                <CardTitle className="text-2xl font-semibold text-slate-800">AI Support</CardTitle>
               </div>
-              <CardDescription className="text-base text-slate-500 dark:text-slate-400 leading-relaxed">
+              <CardDescription className="text-base text-slate-600 leading-relaxed">
                 Always available, empathetic AI listens and provides support whenever you need.
               </CardDescription>
             </CardHeader>
@@ -424,12 +424,12 @@ export default function DashboardPage() {
           <GlassCard className="h-full flex flex-col highlight-emerald transition-all duration-300 hover:scale-[1.02]">
             <CardHeader>
               <div className="flex items-center gap-4 mb-2">
-                <div className="bg-emerald-100 dark:bg-emerald-900/50 p-4 rounded-2xl">
-                  <Users className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                <div className="bg-emerald-100 p-4 rounded-2xl">
+                  <Users className="h-6 w-6 text-emerald-600" />
                 </div>
-                <CardTitle className="text-2xl font-semibold text-slate-800 dark:text-slate-100">Community</CardTitle>
+                <CardTitle className="text-2xl font-semibold text-slate-800">Community</CardTitle>
               </div>
-              <CardDescription className="text-base text-slate-500 dark:text-slate-400 leading-relaxed">
+              <CardDescription className="text-base text-slate-600 leading-relaxed">
                 Join anonymous safe-spaces to connect with other students on similar journeys.
               </CardDescription>
             </CardHeader>

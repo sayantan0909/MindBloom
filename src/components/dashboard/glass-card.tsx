@@ -18,22 +18,25 @@ export const GlassCard = ({ children, className = "", hover = true, onClick }: G
             transition={{ duration: 0.5, ease: "easeOut" }}
             whileHover={hover ? {
                 y: -4,
-                scale: 1.02,
                 transition: { duration: 0.2 }
             } : {}}
             onClick={onClick}
             className={`
                 backdrop-blur-xl
-                bg-white/60 dark:bg-slate-800/60
-                border border-white/20 dark:border-slate-700/20
+                bg-white/70
+                border border-white/80
                 rounded-2xl
-                shadow-[0_8px_32px_0_rgba(31,38,135,0.15)]
-                hover:shadow-[0_12px_48px_0_rgba(31,38,135,0.25)]
+                shadow-[0_8px_32px_rgba(156,100,250,0.12)]
+                hover:shadow-[0_12px_48px_rgba(156,100,250,0.16)]
                 transition-all duration-300
                 overflow-hidden
+                focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-4
                 ${onClick ? 'cursor-pointer' : ''}
                 ${className}
             `}
+            style={{
+                willChange: hover ? 'transform' : 'auto'
+            }}
         >
             {children}
         </motion.div>
