@@ -8,49 +8,53 @@ export function useSupabaseUser() {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // Prevent double sync on re-renders
+    // Prevent duplicate DB writes
     const hasSynced = useRef(false);
 
     useEffect(() => {
         const syncUser = async (authUser: User) => {
-            const { error } = await supabase.from("profiles").upsert({
-                id: authUser.id, // MUST match auth.users.id
-                email: authUser.email,
-                name: authUser.user_metadata?.name ?? null,
-                avatar_url: authUser.user_metadata?.avatar_url ?? null,
-                created_at: new Date().toISOString(),
-            });
+            const { error } = await supabase.from("users").upsert(
+                {
+                    auth_user_id: authUser.id, // 🔑 link to auth.users.id
+                    email: authUser.email!,
+                    name: authUser.user_metadata?.name ?? null,
+                    profile_picture: authUser.user_metadata?.avatar_url ?? null,
+                    last_login: new Date().toISOString(),
+                    is_active: true,
+                },
+                {
+                    onConflict: "auth_user_id",
+                }
+            );
 
             if (error) {
-                console.error("❌ User sync failed:", {
-                    message: error.message,
-                    details: error.details,
-                    hint: error.hint,
-                    code: error.code,
-                });
+                console.error("❌ User sync failed:", error);
+
             } else {
-                console.log("✅ User saved to database");
+                console.log("✅ User synced to public.users");
             }
         };
 
         // Initial session load
-        supabase.auth.getUser().then(({ data, error }) => {
-            if (error) {
-                console.error("❌ Failed to get user:", error);
+        supabase.auth
+            .getUser()
+            .then(({ data, error }) => {
+                if (error) {
+                    console.error("❌ Failed to get user:", error);
+                    setLoading(false);
+                    return;
+                }
+
+                setUser(data.user ?? null);
                 setLoading(false);
-                return;
-            }
 
-            setUser(data.user);
-            setLoading(false);
+                if (data.user && !hasSynced.current) {
+                    hasSynced.current = true;
+                    syncUser(data.user);
+                }
+            });
 
-            if (data.user && !hasSynced.current) {
-                hasSynced.current = true;
-                syncUser(data.user);
-            }
-        });
-
-        // Auth state changes (login / logout)
+        // Auth state changes (login / logout / refresh)
         const {
             data: { subscription },
         } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -59,6 +63,10 @@ export function useSupabaseUser() {
             if (session?.user && !hasSynced.current) {
                 hasSynced.current = true;
                 syncUser(session.user);
+            }
+
+            if (!session?.user) {
+                hasSynced.current = false;
             }
         });
 

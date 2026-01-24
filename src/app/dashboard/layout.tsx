@@ -1,5 +1,5 @@
 'use client';
-
+import MouseTrail from '@/components/ui/mouse-trail';
 import { Button } from '@/components/ui/button';
 import {
   Bell,
@@ -13,6 +13,7 @@ import {
   MessageCircle,
   Calendar,
   Settings,
+  User,
 } from 'lucide-react';
 import { MindBloomLogo } from '@/components/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -38,31 +39,23 @@ export default function DashboardLayout({
   const { user, loading } = useSupabaseUser();
   const router = useRouter();
 
-  /* ---------- Dock Visibility State ---------- */
+  /* ---------- UI State ---------- */
   const [dockVisible, setDockVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   /* ---------- Auth Guard ---------- */
   useEffect(() => {
     if (!loading && !user) router.push('/');
   }, [user, loading, router]);
 
-  /* ---------- Scroll Logic for Dock ---------- */
+  /* ---------- Scroll Logic ---------- */
   useEffect(() => {
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      if (currentScrollY > lastScrollY && currentScrollY > 80) {
-        // scrolling down
-        setDockVisible(false);
-      } else {
-        // scrolling up
-        setDockVisible(true);
-      }
-
-      setLastScrollY(currentScrollY);
+      const current = window.scrollY;
+      setDockVisible(!(current > lastScrollY && current > 80));
+      setLastScrollY(current);
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
@@ -72,19 +65,6 @@ export default function DashboardLayout({
     await supabase.auth.signOut();
     router.push('/');
   };
-
-  /* ---------- Floating Dock Items ---------- */
-  const dockItems = [
-    { title: 'Dashboard', icon: <Home className="w-full h-full text-indigo-600" />, href: '/dashboard' },
-    { title: 'Expression Analysis', icon: <Smile className="w-full h-full text-purple-600" />, href: '/dashboard/expression-analysis' },
-    { title: 'Screening Test', icon: <ClipboardList className="w-full h-full text-pink-600" />, href: '/dashboard/screening' },
-    { title: 'Relax & Reset', icon: <Wind className="w-full h-full text-cyan-600" />, href: '/dashboard/relax' },
-    { title: 'Resource Hub', icon: <BookOpen className="w-full h-full text-amber-600" />, href: '/dashboard/resources' },
-    { title: 'AI Chatbot', icon: <Sparkles className="w-full h-full text-violet-600" />, href: '/dashboard/chatbot' },
-    { title: 'Peer Support', icon: <MessageCircle className="w-full h-full text-blue-600" />, href: '/dashboard/peer-support' },
-    { title: 'Counsellor Booking', icon: <Calendar className="w-full h-full text-emerald-600" />, href: '/dashboard/booking' },
-    { title: 'Settings', icon: <Settings className="w-full h-full text-slate-600" />, href: '/dashboard/settings' },
-  ];
 
   /* ---------- Loader ---------- */
   if (loading || !user) {
@@ -100,44 +80,40 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="relative flex min-h-screen w-full overflow-hidden font-sans bg-gradient-to-br from-indigo-50/30 via-purple-50/30 to-pink-50/30">
+    <div className="relative flex w-full overflow-x-hidden font-sans bg-gradient-to-br from-indigo-50/30 via-purple-50/30 to-pink-50/30">
 
-      {/* FLOATING DOCK — DESKTOP ONLY */}
-      <motion.div
-        className="hidden md:block fixed left-0 top-24 z-50 w-20"
-        onMouseEnter={() => setDockVisible(true)}
-      >
+      {/* 🌿 CALMING MOUSE TRAIL (GLOBAL, NON-INTERACTIVE) */}
+      <MouseTrail />
+
+      {/* FLOATING DOCK — UNCHANGED */}
+      <motion.div className="hidden md:block fixed left-0 top-24 z-50 w-20">
         <motion.div
           className="ml-6"
-          initial={{ opacity: 1, x: 0 }}
-          animate={{
-            opacity: dockVisible ? 1 : 0,
-            x: dockVisible ? 0 : -40,
-          }}
-          transition={{ duration: 0.35, ease: 'easeOut' }}
+          animate={{ opacity: dockVisible ? 1 : 0, x: dockVisible ? 0 : -40 }}
+          transition={{ duration: 0.35 }}
         >
           <FloatingDock
-            items={dockItems}
-            desktopClassName="
-              flex-col gap-4 py-5 px-3 rounded-[28px]
-              bg-[rgba(255,255,255,0.65)]
-              backdrop-blur-[20px]
-              border border-white/40
-              shadow-[0_20px_60px_rgba(120,90,255,0.25)]
-              opacity-90 hover:opacity-100
-              transition-all duration-300
-            "
+            items={[
+              { title: 'Dashboard', icon: <Home className="w-full h-full text-indigo-600" />, href: '/dashboard' },
+              { title: 'Expression Analysis', icon: <Smile className="w-full h-full text-purple-600" />, href: '/dashboard/expression-analysis' },
+              { title: 'Screening Test', icon: <ClipboardList className="w-full h-full text-pink-600" />, href: '/dashboard/screening' },
+              { title: 'Relax & Reset', icon: <Wind className="w-full h-full text-cyan-600" />, href: '/dashboard/relax' },
+              { title: 'Resource Hub', icon: <BookOpen className="w-full h-full text-amber-600" />, href: '/dashboard/resources' },
+              { title: 'AI Chatbot', icon: <Sparkles className="w-full h-full text-violet-600" />, href: '/dashboard/chatbot' },
+              { title: 'Peer Support', icon: <MessageCircle className="w-full h-full text-blue-600" />, href: '/dashboard/peer-support' },
+              { title: 'Counsellor Booking', icon: <Calendar className="w-full h-full text-emerald-600" />, href: '/dashboard/booking' },
+              { title: 'Settings', icon: <Settings className="w-full h-full text-slate-600" />, href: '/dashboard/settings' },
+            ]}
+            desktopClassName="flex-col gap-4 py-5 px-3 rounded-[28px] bg-[rgba(255,255,255,0.65)] backdrop-blur-[20px] border border-white/40 shadow-[0_20px_60px_rgba(120,90,255,0.25)]"
           />
         </motion.div>
       </motion.div>
 
       {/* CONTENT */}
       <div className="flex flex-col min-h-screen w-full">
-
-        {/* HEADER */}
         <header className="sticky top-0 z-40 h-16 px-6 flex items-center backdrop-blur-xl bg-white/60 border-b border-indigo-100/50">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-500/30">
+            <div className="p-2 rounded-2xl bg-indigo-600 shadow-lg">
               <MindBloomLogo className="w-6 h-6 text-white" />
             </div>
             <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
@@ -151,6 +127,7 @@ export default function DashboardLayout({
             <Bell className="h-5 w-5 text-slate-600" />
           </Button>
 
+          {/* 👇 PROFILE OPTION */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-11 w-11 rounded-2xl p-0 hover:bg-indigo-50">
@@ -162,7 +139,16 @@ export default function DashboardLayout({
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
+
             <DropdownMenuContent className="w-72 p-2 rounded-3xl backdrop-blur-3xl bg-white/90 border-indigo-100">
+              <DropdownMenuItem
+                onClick={() => setProfileOpen(true)}
+                className="rounded-2xl cursor-pointer"
+              >
+                <User className="mr-3 h-4 w-4 text-indigo-600" />
+                Profile
+              </DropdownMenuItem>
+
               <DropdownMenuItem
                 onClick={handleLogout}
                 className="font-bold text-destructive rounded-2xl cursor-pointer"
@@ -174,12 +160,16 @@ export default function DashboardLayout({
           </DropdownMenu>
         </header>
 
-        {/* MAIN CONTENT */}
-        <main className="flex-1 pl-20 md:pl-24 p-4 sm:p-6 lg:p-10">
+        <main className="flex-1 min-h-[calc(100vh-4rem)] pl-20 md:pl-24 pt-10 p-4 sm:p-6 lg:p-10">
           {children}
-          <UserProfileModal />
-        </main>
 
+          {/* ✅ CORRECT PROP NAME */}
+          <UserProfileModal
+            open={profileOpen}
+            onCloseAction={() => setProfileOpen(false)}
+            user={user}
+          />
+        </main>
       </div>
     </div>
   );

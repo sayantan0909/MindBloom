@@ -1,122 +1,202 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useMouseTrail } from '@/hooks/use-mouse-trail';
+import React, { useEffect, useRef, useState } from 'react';
 
-const DOT_COUNT = 15;
-const FADE_OUT_SPEED = 0.05;
-const INACTIVITY_TIMEOUT = 3000;
+const MouseTrail = () => {
+  const canvasRef = useRef(null);
+  const particlesRef = useRef([]);
+  const mouseRef = useRef({ x: 0, y: 0 });
+  const targetRef = useRef({ x: 0, y: 0 });
+  const lastMoveRef = useRef(Date.now());
+  const idleTimeRef = useRef(0);
+  const breathPhaseRef = useRef(0);
+  const animationFrameRef = useRef(null);
 
-export function MouseTrail() {
-  const { isEnabled } = useMouseTrail();
+  // Healing color palettes - choose one per session
+  const palettes = {
+    anxiety: { r: 191, g: 215, b: 255 }, // Soft blue
+    lowMood: { r: 214, g: 199, b: 255 }, // Lavender
+    sadness: { r: 255, g: 214, b: 201 }, // Warm peach
+    tired: { r: 184, g: 181, b: 255 }    // Cool violet
+  };
+
+  const [sessionColor] = useState(() => {
+    const keys = Object.keys(palettes);
+    return palettes[keys[Math.floor(Math.random() * keys.length)]];
+  });
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !isEnabled) {
-      return;
-    }
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-    canvas.style.position = 'fixed';
-    canvas.style.top = '0';
-    canvas.style.left = '0';
-    canvas.style.width = '100vw';
-    canvas.style.height = '100vh';
-    canvas.style.pointerEvents = 'none';
-    canvas.style.zIndex = '9999';
-    document.body.appendChild(canvas);
-
-    let animationFrameId: number;
-    let inactivityTimer: NodeJS.Timeout;
-    let currentIntensity = 1;
-
-    const dots: { x: number; y: number; alpha: number; scale: number }[] = [];
-    const mouse = { x: -100, y: -100 };
-    let themeColor = 'hsla(var(--primary), 0.7)';
-
-    const resizeCanvas = () => {
+    const handleResize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
 
-    const updateThemeColor = () => {
-        const style = getComputedStyle(document.body);
-        const primaryHsl = style.getPropertyValue('--primary').trim();
-        if (primaryHsl) {
-            themeColor = `hsla(${primaryHsl}, 0.7)`;
+    const handleMouseMove = (e) => {
+      targetRef.current = { x: e.clientX, y: e.clientY };
+      lastMoveRef.current = Date.now();
+      idleTimeRef.current = 0;
+    };
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('mousemove', handleMouseMove);
+
+    // Particle class
+    class Particle {
+      constructor(x, y, isIdle = false) {
+        this.x = x;
+        this.y = y;
+        this.size = 3 + Math.random() * 3;
+        this.opacity = 0.12 + Math.random() * 0.13;
+        this.maxOpacity = this.opacity;
+        this.life = 1;
+        this.decay = 0.008 + Math.random() * 0.004;
+        this.offsetX = (Math.random() - 0.5) * 20;
+        this.offsetY = (Math.random() - 0.5) * 20;
+        this.isIdle = isIdle;
+        this.idleExpand = 0;
+      }
+
+      update(isIdle) {
+        if (this.isIdle && isIdle) {
+          // Gentle expansion when idle
+          this.idleExpand += 0.02;
+          this.size = (3 + Math.random() * 3) * (1 + Math.sin(this.idleExpand) * 0.3);
+          this.opacity = this.maxOpacity * (0.7 + Math.sin(this.idleExpand * 0.5) * 0.3);
+        } else {
+          this.life -= this.decay;
+          this.opacity = this.maxOpacity * this.life;
         }
-    };
-    
-    for (let i = 0; i < DOT_COUNT; i++) {
-      dots.push({ x: mouse.x, y: mouse.y, alpha: 1, scale: 1 });
+      }
+
+      draw(ctx, color) {
+        const gradient = ctx.createRadialGradient(
+          this.x + this.offsetX,
+          this.y + this.offsetY,
+          0,
+          this.x + this.offsetX,
+          this.y + this.offsetY,
+          this.size * 4
+        );
+
+        gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${this.opacity})`);
+        gradient.addColorStop(0.5, `rgba(${color.r}, ${color.g}, ${color.b}, ${this.opacity * 0.4})`);
+        gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
+
+        ctx.fillStyle = gradient;
+        ctx.filter = 'blur(8px)';
+        ctx.fillRect(
+          this.x + this.offsetX - this.size * 4,
+          this.y + this.offsetY - this.size * 4,
+          this.size * 8,
+          this.size * 8
+        );
+        ctx.filter = 'none';
+      }
     }
-    
-    const handleMouseMove = (e: MouseEvent) => {
-        mouse.x = e.clientX;
-        mouse.y = e.clientY;
-        currentIntensity = 1;
-        clearTimeout(inactivityTimer);
-        inactivityTimer = setTimeout(() => {
-            currentIntensity = 0.3;
-        }, INACTIVITY_TIMEOUT);
-    };
 
-    const draw = () => {
-      if (!ctx) return;
-
+    const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      dots.forEach((dot, index) => {
-        const nextDot = dots[index + 1] || dots[0];
+      // Smooth cursor following with lag
+      const ease = 0.12;
+      mouseRef.current.x += (targetRef.current.x - mouseRef.current.x) * ease;
+      mouseRef.current.y += (targetRef.current.y - mouseRef.current.y) * ease;
 
-        dot.x += (mouse.x - dot.x) * 0.5;
-        dot.y += (mouse.y - dot.y) * 0.5;
-        dot.alpha -= FADE_OUT_SPEED;
-        if(dot.alpha < 0) dot.alpha = 0;
+      // Check if idle
+      const timeSinceMove = Date.now() - lastMoveRef.current;
+      const isIdle = timeSinceMove > 500;
 
-        ctx.beginPath();
-        ctx.arc(dot.x, dot.y, 2 * dot.scale, 0, 2 * Math.PI);
-        ctx.fillStyle = themeColor.replace(/, 0.7\)/, `, ${dot.alpha * currentIntensity})`);
-        ctx.fill();
-        
-        dot.scale = (index / DOT_COUNT);
+      if (isIdle) {
+        idleTimeRef.current += 0.016;
+      }
+
+      // Breathing pulse rhythm (4s inhale, 6s exhale)
+      breathPhaseRef.current += 0.01;
+      const breathIntensity = Math.sin(breathPhaseRef.current * 0.628) * 0.5 + 0.5;
+
+      // Create new particles (fewer when idle)
+      const shouldSpawn = Math.random() < (isIdle ? 0.15 : 0.35);
+      if (shouldSpawn && particlesRef.current.length < (isIdle ? 8 : 12)) {
+        particlesRef.current.push(
+          new Particle(mouseRef.current.x, mouseRef.current.y, isIdle)
+        );
+      }
+
+      // Update and draw particles
+      particlesRef.current = particlesRef.current.filter(particle => {
+        particle.update(isIdle);
+
+        if (particle.life > 0 || particle.isIdle) {
+          // Apply breathing effect to particle properties
+          const breathSize = particle.size * (1 + breathIntensity * 0.15);
+          const originalSize = particle.size;
+          particle.size = breathSize;
+          particle.draw(ctx, sessionColor);
+          particle.size = originalSize;
+          return true;
+        }
+        return false;
       });
-      
-      dots[0].x = mouse.x;
-      dots[0].y = mouse.y;
-      dots[0].alpha = 1;
 
-      animationFrameId = requestAnimationFrame(draw);
+      // Draw main aura glow
+      const mainGradient = ctx.createRadialGradient(
+        mouseRef.current.x,
+        mouseRef.current.y,
+        0,
+        mouseRef.current.x,
+        mouseRef.current.y,
+        40 + (isIdle ? idleTimeRef.current * 10 : 0)
+      );
+
+      const mainOpacity = (0.08 + breathIntensity * 0.04) * (isIdle ? 0.7 : 1);
+      mainGradient.addColorStop(0, `rgba(${sessionColor.r}, ${sessionColor.g}, ${sessionColor.b}, ${mainOpacity})`);
+      mainGradient.addColorStop(0.6, `rgba(${sessionColor.r}, ${sessionColor.g}, ${sessionColor.b}, ${mainOpacity * 0.3})`);
+      mainGradient.addColorStop(1, `rgba(${sessionColor.r}, ${sessionColor.g}, ${sessionColor.b}, 0)`);
+
+      ctx.fillStyle = mainGradient;
+      ctx.filter = 'blur(20px)';
+      const auraSize = 80 + (isIdle ? Math.min(idleTimeRef.current * 20, 60) : 0);
+      ctx.fillRect(
+        mouseRef.current.x - auraSize,
+        mouseRef.current.y - auraSize,
+        auraSize * 2,
+        auraSize * 2
+      );
+      ctx.filter = 'none';
+
+      animationFrameRef.current = requestAnimationFrame(animate);
     };
 
-    const isTouchDevice = 'ontouchstart' in window;
-    if (!isTouchDevice) {
-        resizeCanvas();
-        updateThemeColor();
-        window.addEventListener('resize', resizeCanvas);
-        document.addEventListener('mousemove', handleMouseMove);
+    animate();
 
-        const observer = new MutationObserver((mutations) => {
-            if (mutations.some(m => m.attributeName === 'class')) {
-                updateThemeColor();
-            }
-        });
-        observer.observe(document.documentElement, { attributes: true });
-
-        draw();
-    }
-    
     return () => {
-      cancelAnimationFrame(animationFrameId);
-      window.removeEventListener('resize', resizeCanvas);
-      document.removeEventListener('mousemove', handleMouseMove);
-      if(document.body.contains(canvas)) {
-        document.body.removeChild(canvas);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('mousemove', handleMouseMove);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isEnabled]);
+  }, [sessionColor]);
 
-  return null;
-}
+  return (
+    <div className="fixed inset-0 pointer-events-none z-50">
+      <canvas
+        ref={canvasRef}
+        className="w-full h-full"
+        style={{ mixBlendMode: 'screen' }}
+      />
+      <div className="absolute bottom-8 left-8 text-sm opacity-40 text-gray-400">
+        Move slowly. Breathe. You are allowed to be here.
+      </div>
+    </div>
+  );
+};
+
+export default MouseTrail;

@@ -4,7 +4,7 @@ import './globals.css';
 import Script from 'next/script';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
-import { MouseTrail } from '@/components/ui/mouse-trail';
+import MouseTrail from '@/components/ui/mouse-trail';
 
 export default function RootLayout({
   children,

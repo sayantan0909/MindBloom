@@ -6,15 +6,17 @@ import { ArrowRight, Bot, ClipboardList, BookOpen, Users, Sparkles } from "lucid
 import Link from "next/link";
 import { useSupabaseUser } from "@/hooks/useSupabaseUser";
 import { GradientText } from "@/components/ui/gradient-text";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { GlassCard } from "@/components/dashboard/glass-card";
 import { useState, useEffect } from "react";
+import { QuickMoodCheckIn } from '@/components/dashboard/quick-mood-checkin';
+import { LotusIllustration } from '@/components/ui/lotus-illustration';
+
 
 export default function DashboardPage() {
   const { user, loading } = useSupabaseUser();
   const [greeting, setGreeting] = useState("");
   const [affirmation, setAffirmation] = useState("");
-  const [selectedMood, setSelectedMood] = useState<string | null>(null);
 
   // Time-based greeting hook
   useEffect(() => {
@@ -44,15 +46,6 @@ export default function DashboardPage() {
     const randomAffirmation = affirmations[Math.floor(Math.random() * affirmations.length)];
     setAffirmation(randomAffirmation);
   }, []);
-
-  // Mood options with emojis
-  const moods = [
-    { id: 'great', emoji: '😊', label: 'Great' },
-    { id: 'good', emoji: '🙂', label: 'Good' },
-    { id: 'okay', emoji: '😐', label: 'Okay' },
-    { id: 'low', emoji: '😔', label: 'Low' },
-    { id: 'struggling', emoji: '😢', label: 'Struggling' },
-  ];
 
   if (loading) {
     return (
@@ -116,7 +109,7 @@ export default function DashboardPage() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
-                className="text-4xl md:text-5xl font-bold font-headline leading-tight"
+                className="text-4xl md:text-5xl font-bold font-headline leading-[1.25]"
               >
                 <GradientText colors={['#6366f1', '#a855f7', '#ec4899']}>
                   {greeting},{" "}
@@ -125,7 +118,6 @@ export default function DashboardPage() {
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.6, duration: 0.5 }}
                   >
-                    {/* {firstName} */}
                     <span className="inline-flex items-center gap-2">
                       {firstName}
 
@@ -151,8 +143,6 @@ export default function DashboardPage() {
                         ✨
                       </motion.span>
                     </span>
-
-
                   </motion.span>
                 </GradientText>
               </motion.h1>
@@ -212,129 +202,20 @@ export default function DashboardPage() {
               </motion.div>
             </div>
 
-            {/* Right Side: Mood Selector + Illustration */}
+            {/* Right Side: Mood Selector + Lotus Illustration */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.8, duration: 0.6 }}
-              className="flex flex-col items-center gap-6 lg:min-w-[280px]"
+              className="flex flex-col items-center gap-6 lg:min-w-[320px]"
             >
-              {/* Calming Illustration */}
-              <div className="relative w-full max-w-[240px]">
-                <svg
-                  viewBox="0 0 200 200"
-                  className="w-full h-auto drop-shadow-lg"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  {/* Peaceful gradient background */}
-                  <defs>
-                    <linearGradient id="calmGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" style={{ stopColor: '#a78bfa', stopOpacity: 0.3 }} />
-                      <stop offset="100%" style={{ stopColor: '#ec4899', stopOpacity: 0.2 }} />
-                    </linearGradient>
-                  </defs>
-
-                  {/* Base circle */}
-                  <circle cx="100" cy="100" r="80" fill="url(#calmGradient)" />
-
-                  {/* Lotus petals - symbol of growth */}
-                  <motion.path
-                    d="M 100 60 Q 85 70 85 85 Q 85 95 100 100 Q 115 95 115 85 Q 115 70 100 60 Z"
-                    fill="#a855f7"
-                    opacity="0.6"
-                    animate={{ scale: [1, 1.05, 1] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                  />
-                  <motion.path
-                    d="M 100 60 Q 115 70 115 85 Q 115 95 100 100 Q 85 95 85 85 Q 85 70 100 60 Z"
-                    fill="#ec4899"
-                    opacity="0.5"
-                    animate={{ scale: [1, 1.08, 1] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-                  />
-
-                  {/* Breathing circle - meditation symbol */}
-                  <motion.circle
-                    cx="100"
-                    cy="100"
-                    r="25"
-                    fill="none"
-                    stroke="#6366f1"
-                    strokeWidth="2"
-                    opacity="0.4"
-                    animate={{ r: [25, 35, 25], opacity: [0.4, 0.2, 0.4] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                  />
-
-                  {/* Center dot */}
-                  <circle cx="100" cy="100" r="8" fill="#6366f1" opacity="0.8" />
-                </svg>
+              {/* Lotus Illustration */}
+              <div className="w-48 h-48">
+                <LotusIllustration />
               </div>
 
-              {/* Mood Selector */}
-              <div className="w-full bg-white/50 backdrop-blur-sm rounded-2xl p-5 border border-slate-200/50">
-                <p className="text-sm font-medium text-slate-700 mb-3 text-center">
-                  Quick mood check-in
-                </p>
-
-                <div className="flex justify-center gap-2 flex-wrap">
-                  {moods.map((mood, index) => (
-                    <motion.button
-                      key={mood.id}
-                      onClick={() => setSelectedMood(mood.id)}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 1.2 + index * 0.1 }}
-                      whileHover={{ scale: 1.15, y: -4 }}
-                      whileTap={{ scale: 0.95 }}
-                      className={`
-                        relative flex flex-col items-center gap-1 p-3 rounded-xl
-                        transition-all duration-300
-                        ${selectedMood === mood.id
-                          ? 'bg-indigo-100 ring-2 ring-indigo-500'
-                          : 'bg-slate-50 hover:bg-slate-100'
-                        }
-                      `}
-                      aria-label={`Select ${mood.label} mood`}
-                    >
-                      <span className="text-2xl">{mood.emoji}</span>
-                      <span className="text-xs font-medium text-slate-700">
-                        {mood.label}
-                      </span>
-
-                      {/* Selection indicator */}
-                      <AnimatePresence>
-                        {selectedMood === mood.id && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            exit={{ scale: 0 }}
-                            className="absolute -top-1 -right-1 w-4 h-4 bg-indigo-500 rounded-full flex items-center justify-center"
-                          >
-                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </motion.button>
-                  ))}
-                </div>
-
-                {/* Feedback message when mood is selected */}
-                <AnimatePresence mode="wait">
-                  {selectedMood && (
-                    <motion.p
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="text-xs text-center text-slate-600 mt-3"
-                    >
-                      Thanks for sharing. We're here for you. 💙
-                    </motion.p>
-                  )}
-                </AnimatePresence>
-              </div>
+              {/* QuickMoodCheckIn Component */}
+              <QuickMoodCheckIn />
             </motion.div>
           </div>
         </GlassCard>
