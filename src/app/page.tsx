@@ -30,7 +30,7 @@ export default function HomePage() {
       <nav className="border-b border-white/10 sticky top-0 z-50 bg-black/20 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-1">
-            <MindBloomLogo className="h-28 w-28" />
+            <MindBloomLogo className="h-14 w-14 animate-[pulse_6s_ease-in-out_infinite]" />
             <span className="text-2xl font-headline font-bold text-white">MindBloom</span>
           </div>
           <div className="flex gap-4">
