@@ -97,7 +97,7 @@ export default function DashboardPage() {
       >
         <GlassCard
           hover={false}
-          className="p-10 relative overflow-hidden group transition-all duration-500 hover:scale-[1.005] hover:shadow-2xl"
+          className="p-10 relative overflow-hidden group transition-all duration-500 hover:scale-[1.005] hover:shadow-2xl ml-6 md:ml-10 lg:ml-12"
         >
           {/* Atmospheric Glow Effects */}
           <div className="absolute -left-20 -top-20 h-72 w-72 rounded-full bg-indigo-400/20 blur-3xl pointer-events-none" />

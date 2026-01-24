@@ -27,7 +27,7 @@ export const GlassCard = ({ children, className = "", hover = true, onClick }: G
                 border border-white/80
                 rounded-2xl
                 shadow-[0_8px_32px_rgba(156,100,250,0.12)]
-                hover:shadow-[0_12px_48px_rgba(156,100,250,0.16)]
+                hover:shadow-[0_12px_48px_0_rgba(31,38,135,0.25)]
                 transition-all duration-300
                 overflow-hidden
                 focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-4

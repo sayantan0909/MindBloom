@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -7,25 +6,13 @@ import { Button } from '@/components/ui/button';
 
 type Phase = 'inhale' | 'hold' | 'exhale';
 
-const breathingCycle: { phase: Phase; text: string; duration: number }[] = [
-  { phase: 'inhale', text: 'Breathe in...', duration: 4000 },
-  { phase: 'hold', text: 'Hold', duration: 4000 },
-  { phase: 'exhale', text: 'Breathe out...', duration: 4000 },
-];
-
-const phaseStyles: Record<Phase, string> = {
-  inhale: 'from-sky-400 via-cyan-300 to-teal-300',
-  hold: 'from-purple-300 via-indigo-300 to-blue-300',
-  exhale: 'from-emerald-300 via-green-300 to-lime-200',
-};
-
 const bubbleSize = {
   inhale: 420,
   hold: 420,
   exhale: 260,
 };
 
-const SESSION_DURATION = 2 * 60 * 1000; // 2 minutes in milliseconds
+const SESSION_DURATION = 2 * 60 * 1000;
 const finalSize = 320;
 
 export function BreathingBubble() {
@@ -34,10 +21,9 @@ export function BreathingBubble() {
   const [count, setCount] = useState(1);
   const [completed, setCompleted] = useState(false);
 
+  /* ---------------- SOUND ---------------- */
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [soundOn, setSoundOn] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
-  const [voiceOn, setVoiceOn] = useState(false);
 
   const toggleSound = async () => {
     if (!audioRef.current) {
@@ -47,112 +33,95 @@ export function BreathingBubble() {
     }
 
     try {
-      if (soundOn) {
-        audioRef.current.pause();
-      } else {
-        await audioRef.current.play();
-      }
+      soundOn ? audioRef.current.pause() : await audioRef.current.play();
       setSoundOn(!soundOn);
     } catch (e) {
       console.error('Audio blocked:', e);
     }
   };
 
+  /* ---------------- VOICE ---------------- */
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(false);
+
   const enableVoice = () => {
     if (!('speechSynthesis' in window)) return;
-
-    // This "silent" utterance is a trick to unlock speech synthesis on mobile browsers
-    const unlock = new SpeechSynthesisUtterance('Voice guidance enabled');
+    const unlock = new SpeechSynthesisUtterance('Voice enabled');
     unlock.volume = 0;
     window.speechSynthesis.speak(unlock);
-
     setVoiceEnabled(true);
-    setVoiceOn(true); // Automatically turn on voice once enabled
+    setVoiceOn(true);
   };
 
   const speak = (text: string) => {
     if (!voiceEnabled || !voiceOn) return;
-
     window.speechSynthesis.cancel();
-
     const u = new SpeechSynthesisUtterance(text);
     u.rate = 0.85;
-    u.pitch = 1;
     u.volume = 1;
-
     window.speechSynthesis.speak(u);
   };
 
+  /* ---------------- CLEANUP ---------------- */
   useEffect(() => {
     return () => {
       audioRef.current?.pause();
-      audioRef.current = null;
       window.speechSynthesis.cancel();
     };
   }, []);
 
+  /* ---------------- BREATHING LOGIC ---------------- */
   useEffect(() => {
     if (!isSessionActive || completed) return;
-
-    const cycleTimer = setTimeout(() => {
-      setPhase((prev) =>
-        prev === 'inhale' ? 'hold' :
-          prev === 'hold' ? 'exhale' :
-            'inhale'
-      );
+    const timer = setTimeout(() => {
+      setPhase(p => (p === 'inhale' ? 'hold' : p === 'hold' ? 'exhale' : 'inhale'));
     }, 4000);
-
-    return () => clearTimeout(cycleTimer);
+    return () => clearTimeout(timer);
   }, [phase, completed, isSessionActive]);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isSessionActive && !completed) {
-      const intervalDuration = phase === 'hold' ? 4000 : 4000;
-      timer = setInterval(() => {
-        setCount((prev) => (prev === 4 ? 1 : prev + 1));
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [isSessionActive, completed, phase]);
+    if (!isSessionActive || completed) return;
+    const interval = setInterval(() => {
+      setCount(c => (c === 4 ? 1 : c + 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [phase, completed, isSessionActive]);
 
   useEffect(() => {
     if (!isSessionActive) return;
-    const sessionTimer = setTimeout(() => {
-      setIsSessionActive(false);
+    const timer = setTimeout(() => {
       setCompleted(true);
+      setIsSessionActive(false);
     }, SESSION_DURATION);
-
-    return () => clearTimeout(sessionTimer);
+    return () => clearTimeout(timer);
   }, [isSessionActive]);
 
   useEffect(() => {
-    if (!voiceOn || completed) return;
-
+    if (completed) return;
     if (phase === 'inhale') speak('Breathe in');
     if (phase === 'hold') speak('Hold');
     if (phase === 'exhale') speak('Breathe out');
-  }, [phase, voiceOn, completed]);
+  }, [phase, completed]);
 
   const handleRestart = () => {
     setPhase('inhale');
-    setIsSessionActive(true);
     setCompleted(false);
+    setIsSessionActive(true);
+    setCount(1);
   };
 
+  /* ---------------- UI ---------------- */
   return (
-    <div className="relative flex flex-col items-center justify-center h-[60vh] overflow-hidden">
-      <div
-        className={`absolute inset-0 transition-colors duration-[4000ms] ${completed ? '' : ''
-          }`}
-      />
+    <div className="relative flex flex-col items-center justify-center h-[60vh] overflow-visible">
+
       <FloatingSoundControl soundOn={soundOn} toggle={toggleSound} />
 
+      {/* VOICE */}
       {!voiceEnabled ? (
         <button
           onClick={enableVoice}
           className="fixed bottom-20 right-6 z-50 rounded-full
-                       px-4 py-2 shadow backdrop-blur"
+                     px-4 py-2 backdrop-blur-xl bg-white/60 shadow-lg"
         >
           🗣 Enable Voice
         </button>
@@ -160,63 +129,73 @@ export function BreathingBubble() {
         <button
           onClick={() => setVoiceOn(!voiceOn)}
           className="fixed bottom-20 right-6 z-50 rounded-full
-                      px-4 py-2 shadow backdrop-blur"
+                     px-4 py-2 backdrop-blur-xl bg-white/60 shadow-lg"
         >
-          {voiceOn ? '🗣️ Voice On' : '🔇 Voice Off'}
+          {voiceOn ? '🗣 Voice On' : '🔇 Voice Off'}
         </button>
       )}
 
-      <div className="relative flex flex-col items-center justify-center">
-        <div className="w-[420px] h-[420px] flex items-center justify-center relative">
-          <div
-            className={`relative rounded-full transition-all duration-[3000ms] ease-out
-                        ${!completed ? `from-emerald-300 to-teal-200` : 'from-emerald-300 to-teal-200'}
-                        ${!completed && phase !== 'hold' ? 'animate-[float_6s_ease-in-out_infinite]' : ''}
-                        ${completed ? 'shadow-[0_0_120px_rgba(120,255,200,0.7)]' : 'shadow-lg'}
-                    `}
-            style={{
-              width: completed ? finalSize : bubbleSize[phase],
-              height: completed ? finalSize : bubbleSize[phase],
-            }}
-          >
-            {!completed && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center">
-                <div className="text-5xl text-white/90">
-                  {phase === 'inhale' && '↑'}
-                  {phase === 'hold' && '•'}
-                  {phase === 'exhale' && '↓'}
-                </div>
+      {/* CRYSTAL BUBBLE */}
+      <div className="relative flex items-center justify-center">
+        <div
+          className="
+            relative rounded-full
+            backdrop-blur-3xl
+            bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.85),rgba(230,245,255,0.55)_45%,rgba(210,235,245,0.45)_70%)]
+            border border-white/40
+            shadow-[inset_0_0_25px_rgba(255,255,255,0.35),0_0_120px_rgba(120,255,220,0.45)]
+            transition-all duration-[4000ms] ease-in-out
+          "
+          style={{
+            width: completed ? finalSize : bubbleSize[phase],
+            height: completed ? finalSize : bubbleSize[phase],
+          }}
+        >
+          {/* 💧 GLASS HIGHLIGHT */}
+          <div className="absolute inset-0 rounded-full
+            bg-[linear-gradient(135deg,rgba(255,255,255,0.45),transparent_60%)]" />
 
-                <div className="text-6xl font-light text-white/90">
-                  {count}
-                </div>
+          {/* 🌊 BREATH WAVE */}
+          {!completed && phase !== 'hold' && (
+            <div className="absolute inset-0 rounded-full
+              bg-[radial-gradient(circle,rgba(120,255,220,0.35)_0%,transparent_70%)]
+              animate-[wave_8s_ease-in-out_infinite]" />
+          )}
 
-                <div className="text-lg text-white/80 tracking-wide">
-                  {phase === 'inhale' && 'Breathe in'}
-                  {phase === 'hold' && 'Hold'}
-                  {phase === 'exhale' && 'Breathe out'}
-                </div>
+          {!completed && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center">
+              <div className="text-5xl text-gray-700/70">
+                {phase === 'inhale' && '↑'}
+                {phase === 'hold' && '•'}
+                {phase === 'exhale' && '↓'}
               </div>
-            )}
+              <div className="text-6xl font-light text-gray-800">{count}</div>
+              <div className="text-lg text-gray-700">
+                {phase === 'inhale' && 'Breathe in'}
+                {phase === 'hold' && 'Hold'}
+                {phase === 'exhale' && 'Breathe out'}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {completed && (
+        <div className="mt-10 text-center animate-fade-in">
+          <p className="text-xl font-medium text-emerald-700">
+            Breathing session complete
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Your body is now in a calmer state
+          </p>
+          <p className="mt-2 text-sm italic text-emerald-600">
+            Thank yourself for this moment 🌿
+          </p>
+          <div className="mt-6">
+            <Button onClick={handleRestart}>Restart</Button>
           </div>
         </div>
-
-        {completed && (
-          <div className="mt-8 text-center animate-fade-in z-10">
-            <p className="text-xl font-medium text-emerald-700">
-              Breathing session complete
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Your body is now in a calmer state
-            </p>
-            <div className='flex gap-3 mt-6'>
-              <Button onClick={handleRestart}>
-                Restart
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }
