@@ -29,8 +29,8 @@ export default function HomePage() {
       {/* Navigation */}
       <nav className="border-b border-white/10 sticky top-0 z-50 bg-black/20 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <MindBloomLogo className="h-8 w-8 text-purple-500" />
+          <div className="flex items-center gap-1">
+            <MindBloomLogo className="h-28 w-28" />
             <span className="text-2xl font-headline font-bold text-white">MindBloom</span>
           </div>
           <div className="flex gap-4">
@@ -85,7 +85,7 @@ export default function HomePage() {
             </HoverBorderGradient>
           </Link>
           <Link href="/register">
-            <MovingBorder as="button" className="px-8 py-4">
+            <MovingBorder as="button">
               Create Account
             </MovingBorder>
           </Link>

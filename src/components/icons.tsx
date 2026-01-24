@@ -9,10 +9,10 @@ export function MindBloomLogo({ className }: Props) {
     <Image
       src="/mindbloom-logo.png"
       alt="MindBloom Logo"
-      width={40}
-      height={40}
-      className={className}
+      width={56}
+      height={56}
       priority
+      className={`object-contain ${className ?? ""}`}
     />
   );
 }
