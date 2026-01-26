@@ -4,7 +4,6 @@ import { HeartPulse } from "lucide-react";
 import { ExpressionAnalyzer } from './expression-analyzer';
 import { motion } from 'framer-motion';
 import { GradientText } from '@/components/ui/gradient-text';
-import { GlassCard } from '@/components/dashboard/glass-card';
 
 export default function ExpressionAnalysisPage() {
   return (
@@ -24,12 +23,12 @@ export default function ExpressionAnalysisPage() {
 
           <h1 className="text-4xl md:text-6xl font-bold font-headline tracking-tight">
             <GradientText colors={['#f43f5e', '#f97316', '#fbbf24']}>
-              AI Expression Analysis
+              Expression Analysis
             </GradientText>
           </h1>
 
           <p className="text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Let's check your current stress level. This tool uses on-device AI to analyze facial cues in real-time.
+            Let's check your current stress level. This tool uses on-device facial analysis to detect stress markers in real-time.
             <span className="block mt-2 font-medium text-indigo-600 dark:text-indigo-400">Your privacy is guaranteed—no data is recorded or stored.</span>
           </p>
         </motion.div>
