@@ -40,10 +40,19 @@ export default function HomePage() {
       {/* Navigation */}
       <nav className="border-b border-[#2F3E30]/50 sticky top-0 z-50 bg-[#131C16]/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-1">
+          {/* <div className="flex items-center gap-1">
             <MindBloomLogo className="h-14 w-14 animate-[pulse_6s_ease-in-out_infinite]" />
             <span className="text-2xl font-headline font-bold text-white">MindBloom</span>
+          </div> */}
+          <div className="flex items-center gap-2">
+            <MindBloomLogo
+              className="h-20 w-20 text-purple-400 drop-shadow-[0_0_14px_rgba(168,85,247,0.7)]"
+            />
+            <span className="text-2xl font-headline font-bold text-white drop-shadow-[0_0_12px_rgba(168,85,247,0.6)]">
+              MindBloom
+            </span>
           </div>
+
           <div className="flex gap-4">
             {/* <Link href="/login">
               <MovingBorder as="button">
@@ -64,50 +73,6 @@ export default function HomePage() {
           </div>
         </div>
       </nav>
-
-      {/* Hero Section */}
-      {/* <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          <h1 className="text-5xl sm:text-7xl font-headline font-bold mb-6">
-            <GradientText colors={['#5227FF', '#FF9FFC', '#B19EEF']}>
-              Your Mental Health Companion
-            </GradientText>
-          </h1>
-        </motion.div>
-
-        <motion.p
-          className="text-xl text-white/90 mb-8 max-w-2xl mx-auto"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-        >
-          MindBloom is a digital psychological intervention system designed to support your mental wellbeing with AI-driven insights, peer support, and personalized resources.
-        </motion.p>
-
-        <motion.div
-          className="flex flex-col sm:flex-row gap-4 justify-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-        >
-          <Link href="/login">
-            <HoverBorderGradient as="button" className="bg-gradient-to-r from-purple-600 to-blue-600 !text-white px-8 py-4">
-              <span className="flex items-center gap-2">
-                Sign In <ArrowRight className="h-5 w-5" />
-              </span>
-            </HoverBorderGradient>
-          </Link>
-          <Link href="/register">
-            <MovingBorder as="button">
-              Create Account
-            </MovingBorder>
-          </Link>
-        </motion.div>
-      </section> */}
 
       {/* Hero Section */}
       <section className="relative h-screen w-full overflow-hidden">
@@ -171,7 +136,7 @@ export default function HomePage() {
             transition={{ duration: 0.8, delay: 0.4 }}
             style={{ willChange: 'opacity, transform' }}
           >
-            <Link href="/login">
+            {/* <Link href="/login">
               <HoverBorderGradient
                 as="button"
                 className="bg-gradient-to-r from-[#556B2F] to-[#2E8B57] !text-white px-8 py-4"
@@ -180,7 +145,7 @@ export default function HomePage() {
                   Sign In <ArrowRight className="h-5 w-5" />
                 </span>
               </HoverBorderGradient>
-            </Link>
+            </Link> */}
 
             {/* <Link href="/register">
               <MovingBorder as="button">
@@ -189,7 +154,10 @@ export default function HomePage() {
             </Link> */}
             <Link href="/register">
               <button className="px-8 py-4 rounded-xl bg-[#4F8F5F] text-white hover:bg-[#5FA36C] transition-colors">
-                Create Account
+                <span className="flex items-center gap-2">
+                  Begin Your Journey
+                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </span>
               </button>
             </Link>
 

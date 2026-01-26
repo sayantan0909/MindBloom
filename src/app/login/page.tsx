@@ -136,7 +136,7 @@ export default function LoginPage() {
               {/* Header */}
               <div className="text-center mb-8">
                 <div className="flex justify-center items-center mb-4">
-                  <MindBloomLogo className="h-12 w-12 text-purple-600 dark:text-purple-400" />
+                  <MindBloomLogo className="h-32 w-32 text-purple-600 dark:text-purple-400" />
                 </div>
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                   Welcome to MindBloom

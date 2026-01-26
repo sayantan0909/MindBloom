@@ -46,7 +46,7 @@ export default function ForgotPasswordPage() {
       <Card className="w-full max-w-md z-10 shadow-2xl">
         <CardHeader className="text-center">
           <div className="flex justify-center items-center mb-4">
-            <MindBloomLogo className="h-12 w-12 text-primary" />
+            <MindBloomLogo className="h-32 w-32 text-primary" />
           </div>
           <CardTitle className="text-3xl font-headline">Forgot Password</CardTitle>
           <CardDescription>

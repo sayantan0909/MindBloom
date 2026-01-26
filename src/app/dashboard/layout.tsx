@@ -133,7 +133,14 @@ export default function DashboardLayout({
               {/* Soft ambient glow */}
               <div className="absolute -inset-3 rounded-full bg-indigo-400/20 blur-xl" />
               {/* Logo */}
-              <MindBloomLogo className="relative h-16 w-16 animate-[pulse_6s_ease-in-out_infinite]" />
+              <div className="relative flex justify-center items-center">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400/30 to-pink-400/20 blur-xl" />
+
+                <MindBloomLogo
+                  className="relative h-20 w-20 text-purple-600"
+                />
+              </div>
+
             </div>
             <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
               MindBloom
