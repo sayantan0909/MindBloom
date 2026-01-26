@@ -162,3 +162,53 @@ Verify Hero headline has green/gold gradient.
 Verify Feature cards have greenish tint and earth-tone icons.
 Verify CTA section matches the theme.
 Crucial: Ensure layout remains exactly the same (padding, margins unchanged).
+
+Mindful Maze - Implementation Plan
+Goal Description
+Create a therapeutic maze experience in the Resource Hub (src/app/dashboard/resources/mindful-maze/). The game focuses on mindfulness, avoiding competition, timers, or failure states. It will include breathing guidance, visual calm, ambient sounds, and progress affirmations.
+
+User Review Required
+NOTE
+
+I am installing tone to handle the therapeutic ambient sounds. The game will be located at /dashboard/resources/mindful-maze.
+
+Proposed Changes
+Dependencies
+[NEW] Install tone for ambient sounds.
+Components Layer (src/components/mindful-maze/) or (src/app/dashboard/resources/mindful-maze/)
+TIP
+
+I will group the components within the feature directory for better organization.
+
+[NEW] 
+mazeData.ts
+Define 3-5 levels of maze layouts.
+[NEW] 
+MazeRenderer.tsx
+Handle the visual representation of the maze using Tailwind CSS and Framer Motion.
+Display player, walls, and trail effects.
+[NEW] 
+BreathingGuide.tsx
+Implement the pulsing "Breathe in... / Breathe out..." text and progress bar.
+[NEW] 
+CompletionScreen.tsx
+Create the end-of-game overlay with reflection prompts.
+[NEW] 
+MazeGame.tsx
+Core game logic: movement, collision, state management (difficulty, progress, sounds).
+Handle keyboard and swipe interactions.
+[NEW] 
+page.tsx
+Main entry point for the Mindful Maze route.
+Handle level selection and glue the components together.
+Verification Plan
+Automated Tests
+Build verification: npm run dev (already running).
+Manual Verification
+Navigate to /dashboard/resources/mindful-maze.
+Select a difficulty level.
+Verify smooth movement (WASD/Arrows).
+Verify breathing guide animation.
+Verify sound toggle works.
+Verify completion screen triggers correctly at the "E" position.
+Ensure responsive behavior on mobile (swipe).

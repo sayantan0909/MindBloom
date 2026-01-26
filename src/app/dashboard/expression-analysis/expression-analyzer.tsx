@@ -93,6 +93,15 @@ export function ExpressionAnalyzer() {
     eye: 'Stable', brow: 'Stable', jaw: 'Stable', head: 'Stable'
   });
 
+  // Refs to avoid stale closures in frame-loop
+  const phaseRef = useRef<Phase>(phase);
+  const instantScoreRef = useRef<number>(instantScore);
+  const confidenceRef = useRef<number>(confidence);
+
+  useEffect(() => { phaseRef.current = phase; }, [phase]);
+  useEffect(() => { instantScoreRef.current = instantScore; }, [instantScore]);
+  useEffect(() => { confidenceRef.current = confidence; }, [confidence]);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const faceMeshRef = useRef<any | null>(null);
@@ -107,62 +116,6 @@ export function ExpressionAnalyzer() {
 
   const handleResults = useRef<(results: any) => void>(() => { });
 
-  // Initialize AI and MediaPipe
-  // useEffect(() => {
-  //   let cancelled = false;
-
-  //   async function loadFaceMesh() {
-  //     // Initialize AI Models
-  //     featureExtractorRef.current = new FeatureExtractor();
-  //     stressModelRef.current = new StressModel();
-
-  //     try {
-  //       await stressModelRef.current.initialize();
-  //       inferenceRef.current = new StressInference(stressModelRef.current);
-  //       console.log('✓ AI models initialized');
-  //     } catch (err) {
-  //       console.error('AI initialization error:', err);
-  //     }
-
-  //     // Load MediaPipe
-  //     await new Promise<void>((resolve) => {
-  //       const script = document.createElement('script');
-  //       script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js';
-  //       script.crossOrigin = 'anonymous';
-  //       script.onload = () => resolve();
-  //       document.body.appendChild(script);
-  //     });
-
-  //     if (cancelled) return;
-
-  //     // @ts-ignore
-  //     const mesh = new window.FaceMesh({
-  //       locateFile: (file: string) =>
-  //         `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
-  //     });
-
-  //     mesh.setOptions({
-  //       maxNumFaces: 1,
-  //       refineLandmarks: true,
-  //       minDetectionConfidence: 0.5,
-  //       minTrackingConfidence: 0.5,
-  //     });
-
-  //     mesh.onResults((results: any) => handleResults.current(results));
-
-  //     faceMeshRef.current = mesh;
-  //     setLibraryReady(true);
-  //   }
-
-  //   loadFaceMesh();
-
-  //   return () => {
-  //     cancelled = true;
-  //     faceMeshRef.current?.close?.();
-  //     stressModelRef.current?.dispose();
-  //     stopMediaAndAnalysis();
-  //   };
-  // }, []);
   const loadMediaPipe = async () => {
     if ((window as any).FaceMesh) return;
 
@@ -186,11 +139,12 @@ export function ExpressionAnalyzer() {
       minTrackingConfidence: 0.5,
     });
 
+    mesh.onResults((results: any) => handleResults.current(results));
+
     faceMeshRef.current = mesh;
   };
 
-
-
+  // Initialize AI and MediaPipe
   const stopMediaAndAnalysis = useCallback(() => {
     if (animationFrameId.current) {
       cancelAnimationFrame(animationFrameId.current);
@@ -212,6 +166,30 @@ export function ExpressionAnalyzer() {
     featureExtractorRef.current?.reset();
     inferenceRef.current?.reset();
   }, []);
+
+  // Initialize AI Models on mount
+  useEffect(() => {
+    featureExtractorRef.current = new FeatureExtractor();
+    stressModelRef.current = new StressModel();
+
+    async function initModels() {
+      try {
+        await stressModelRef.current?.initialize();
+        inferenceRef.current = new StressInference(stressModelRef.current!);
+        console.log('✓ AI models initialized');
+      } catch (err) {
+        console.error('AI initialization error:', err);
+      }
+    }
+
+    initModels();
+
+    return () => {
+      faceMeshRef.current?.close?.();
+      stressModelRef.current?.dispose();
+      stopMediaAndAnalysis();
+    };
+  }, [stopMediaAndAnalysis]);
 
   // const requestPermissions = async () => {
   //   setPhase('requesting');
@@ -321,7 +299,7 @@ export function ExpressionAnalyzer() {
       if (!results.multiFaceLandmarks || !results.multiFaceLandmarks[0]) {
         noFaceFrames++;
 
-        if (noFaceFrames > MAX_NO_FACE_FRAMES && phase !== 'unknown') {
+        if (noFaceFrames > MAX_NO_FACE_FRAMES && phaseRef.current !== 'unknown') {
           setPhase('unknown');
           setInstantScore(0);
           setConfidence(0);
@@ -331,7 +309,7 @@ export function ExpressionAnalyzer() {
       }
 
       noFaceFrames = 0; // Reset counter
-      if (phase === 'unknown') {
+      if (phaseRef.current === 'unknown') {
         setPhase('analyzing');
       }
 
@@ -343,10 +321,10 @@ export function ExpressionAnalyzer() {
         ear: currentMetrics.ear.toFixed(3),
         brow: currentMetrics.brow.toFixed(3),
         jaw: currentMetrics.jaw.toFixed(3),
-        phase: phase
+        phase: phaseRef.current
       });
 
-      if (phase === 'baseline') {
+      if (phaseRef.current === 'baseline') {
         baselineSamples.ear.push(currentMetrics.ear);
         baselineSamples.brow.push(currentMetrics.brow);
         baselineSamples.jaw.push(currentMetrics.jaw);
@@ -356,7 +334,7 @@ export function ExpressionAnalyzer() {
         return;
       }
 
-      if (phase === 'analyzing') {
+      if (phaseRef.current === 'analyzing') {
         if (!baselineLocked) {
           baseline = {
             ear: avg(baselineSamples.ear),
@@ -386,7 +364,7 @@ export function ExpressionAnalyzer() {
     };
 
     const processFrame = async () => {
-      if (videoRef.current && faceMeshRef.current && ['baseline', 'analyzing', 'unknown'].includes(phase)) {
+      if (videoRef.current && faceMeshRef.current && ['baseline', 'analyzing', 'unknown'].includes(phaseRef.current)) {
         await faceMeshRef.current.send({ image: videoRef.current });
         animationFrameId.current = requestAnimationFrame(processFrame);
       }
@@ -399,7 +377,7 @@ export function ExpressionAnalyzer() {
       setPhase('analyzing');
 
       const analysisTimer = setTimeout(() => {
-        const finalScore = instantScore;
+        const finalScore = instantScoreRef.current;
 
         let finalResult: StressLevel;
         if (finalScore < 0.35) finalResult = 'Low';

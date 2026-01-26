@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { mentalHealthData, Resource } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Gamepad2, Headphones, Newspaper, PlaySquare, BookHeart, Sparkles } from 'lucide-react';
+import Link from 'next/link';
+import { BookOpen, Gamepad2, Headphones, Newspaper, PlaySquare, BookHeart, Sparkles, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from '@/components/dashboard/glass-card';
@@ -68,6 +69,41 @@ export default function ResourcesPage() {
           <p className="text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
             Explore a curated collection of videos, articles, relaxation audios, and games to support your mental wellness journey.
           </p>
+
+          {/* Featured Mindfulness Tool */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.4 }}
+            className="max-w-4xl mx-auto mt-12"
+          >
+            <Link href="/dashboard/resources/mindful-maze">
+              <GlassCard className="group p-1 border-emerald-200/50 dark:border-emerald-900/30 bg-gradient-to-br from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/20 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-500 rounded-[2.5rem] overflow-hidden">
+                <div className="flex flex-col md:flex-row items-center gap-8 p-6 md:p-8">
+                  <div className="relative w-full md:w-64 h-48 rounded-[2rem] overflow-hidden shadow-lg">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#a5d6a7] to-[#66bb6a] flex items-center justify-center">
+                      <Gamepad2 className="h-20 w-20 text-white/80" />
+                    </div>
+                  </div>
+
+                  <div className="flex-1 text-center md:text-left space-y-4">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-black uppercase tracking-widest">
+                      <Sparkles size={14} /> Featured Exercise
+                    </div>
+                    <h2 className="text-3xl font-bold font-headline text-slate-800 dark:text-white">Mindful Maze Experience</h2>
+                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                      A sanctuary for your thoughts. Navigate through calming patterns with therapeutic breathing guidance. No timers, no pressure.
+                    </p>
+                    <div className="pt-2">
+                      <Button className="h-12 px-8 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-lg shadow-emerald-500/20 transition-all hover:scale-105">
+                        Begin Journey <ArrowRight className="ml-2 h-5 w-5" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </GlassCard>
+            </Link>
+          </motion.div>
         </motion.div>
 
         {/* Category Filters */}
@@ -146,9 +182,17 @@ export default function ResourcesPage() {
                           {typeIcons[resource.type]}
                           <span className="capitalize">{resource.type}</span>
                         </div>
-                        <Button variant="ghost" size="sm" className="font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 group/btn rounded-xl">
-                          Explore <Sparkles className="ml-2 h-3.5 w-3.5 group-hover/btn:scale-125 transition-transform" />
-                        </Button>
+                        {resource.title === "Mindful Maze" ? (
+                          <Link href="/dashboard/resources/mindful-maze">
+                            <Button variant="ghost" size="sm" className="font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 group/btn rounded-xl">
+                              Explore <Sparkles className="ml-2 h-3.5 w-3.5 group-hover/btn:scale-125 transition-transform" />
+                            </Button>
+                          </Link>
+                        ) : (
+                          <Button variant="ghost" size="sm" className="font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 group/btn rounded-xl">
+                            Explore <Sparkles className="ml-2 h-3.5 w-3.5 group-hover/btn:scale-125 transition-transform" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </GlassCard>
