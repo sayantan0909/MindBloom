@@ -99,3 +99,66 @@ Verify Logs: Confirm the peer can see the messages previously sent to/by the AI.
 Verify Ending: End the session and confirm matching is cleared.
 Note: The system is completely anonymous; users only see "Peer Listener" or "AI Assistant," never real names.
 
+Homepage Color Refresh - Implementation Plan
+Goal Description
+Refactor the color scheme of the homepage (
+src/app/page.tsx
+) to align with the "calm forest light clearing at sunrise" aesthetic of the hero.mp4 background video. This involves switching from purple/strong accents to deep muted greens, olive-indigos, and warm golden tones.
+
+Constraint Checklist & Confidence Score:
+
+Analyze current code? Yes.
+Plan changes? Yes.
+Strict Constraints?
+❌ Do NOT change layout? Yes.
+❌ Do NOT change spacing/sizing? Yes.
+❌ Do NOT change text/font? Yes.
+❌ Do NOT change animations? Yes.
+❌ Do NOT touch other pages? Yes (Changes isolated to 
+page.tsx
+).
+✅ ONLY adjust colors? Yes. Confidence Score: 5/5
+User Review Required
+IMPORTANT
+
+This plan modifies only 
+src/app/page.tsx
+. The "Header" mentioned in the request is implemented directly inside 
+page.tsx
+, so 
+layout.tsx
+ will remain untouched to preserve other pages. Global styles in 
+globals.css
+ are also untouched.
+
+Proposed Changes
+Application Layer (src/app/)
+[MODIFY] 
+page.tsx
+Main Container: Change bg-[#603da1] to bg-[#111A14] (Deep Forest Green fallback).
+Navigation (Header):
+Change bg-black/20 to bg-[#131C16]/80 (Deep Olive-Black transparent).
+Change border-white/10 to border-[#2F3E30]/50 (Subtle Moss Border).
+Update "Get Started" button gradient from from-purple-600 to-blue-600 to from-[#556B2F] to-[#2E8B57] (Olive to Sea Green).
+Hero Section:
+Update GradientText colors from ['#5227FF', '#FF9FFC', '#B19EEF'] to ['#C1E1C1', '#F9E4B7', '#D4AF37'] (Tea Green, Champagne, Gold).
+Update "Sign In" button gradient to match header button: from-[#556B2F] to-[#2E8B57].
+Features Section:
+Update Card backgrounds from bg-white/5 to bg-[#1A2F21]/40 (Glassy Green).
+Update Icon colors:
+Brain: text-purple-400 -> text-[#8FBC8F] (Dark Sea Green).
+Users: text-pink-400 -> text-[#DEB887] (Burlywood/Tan).
+Shield: text-blue-400 -> text-[#66CDAA] (Medium Aquamarine).
+CTA Section:
+Update Card border/bg: border-purple-500/30 -> border-[#D4AF37]/30 (Gold), from-purple-900/20 -> from-[#2F3E30]/20 (Dark Green).
+Update Button gradient: from-[#556B2F] to-[#2E8B57].
+Verification Plan
+Manual Verification
+Run the app: npm run dev (already running).
+Check Homepage:
+Verify Header background is deep muted green/olive.
+Verify "Get Started" and Hero buttons are green-to-teal/olive.
+Verify Hero headline has green/gold gradient.
+Verify Feature cards have greenish tint and earth-tone icons.
+Verify CTA section matches the theme.
+Crucial: Ensure layout remains exactly the same (padding, margins unchanged).

@@ -83,7 +83,7 @@ export default function DashboardLayout({
     <div className="relative flex w-full overflow-x-hidden font-sans bg-gradient-to-br from-indigo-50/30 via-purple-50/30 to-pink-50/30">
 
       {/* 🌿 CALMING MOUSE TRAIL (GLOBAL, NON-INTERACTIVE) */}
-      <MouseTrail />
+      {/* <MouseTrail /> */}
 
       {/* FLOATING DOCK — UNCHANGED */}
       <motion.div className="hidden md:block fixed left-0 top-24 z-50 w-20">
@@ -102,7 +102,7 @@ export default function DashboardLayout({
               { title: 'AI Chatbot', icon: <Sparkles className="w-full h-full text-violet-600" />, href: '/dashboard/chatbot' },
               { title: 'Peer Support', icon: <MessageCircle className="w-full h-full text-blue-600" />, href: '/dashboard/peer-support' },
               { title: 'Counsellor Booking', icon: <Calendar className="w-full h-full text-emerald-600" />, href: '/dashboard/booking' },
-              { title: 'Settings', icon: <Settings className="w-full h-full text-slate-600" />, href: '/dashboard/settings' },
+              { title: 'Settings', icon: <Settings className="w-full h-full text-slate-600" />, href: '/dashboard/admin' },
             ]}
             desktopClassName="flex-col gap-4 py-5 px-3 rounded-[28px] bg-[rgba(255,255,255,0.65)] backdrop-blur-[20px] border border-white/40 shadow-[0_20px_60px_rgba(120,90,255,0.25)]"
           />

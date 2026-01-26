@@ -43,7 +43,6 @@ export default function RootLayout({
         <ThemeProvider>
           {/* Global Ambient Background */}
           <div className="app-background">
-            <MouseTrail />
             {children}
             <Toaster />
           </div>
