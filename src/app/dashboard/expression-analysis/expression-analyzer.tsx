@@ -108,61 +108,88 @@ export function ExpressionAnalyzer() {
   const handleResults = useRef<(results: any) => void>(() => { });
 
   // Initialize AI and MediaPipe
-  useEffect(() => {
-    let cancelled = false;
+  // useEffect(() => {
+  //   let cancelled = false;
 
-    async function loadFaceMesh() {
-      // Initialize AI Models
-      featureExtractorRef.current = new FeatureExtractor();
-      stressModelRef.current = new StressModel();
+  //   async function loadFaceMesh() {
+  //     // Initialize AI Models
+  //     featureExtractorRef.current = new FeatureExtractor();
+  //     stressModelRef.current = new StressModel();
 
-      try {
-        await stressModelRef.current.initialize();
-        inferenceRef.current = new StressInference(stressModelRef.current);
-        console.log('✓ AI models initialized');
-      } catch (err) {
-        console.error('AI initialization error:', err);
-      }
+  //     try {
+  //       await stressModelRef.current.initialize();
+  //       inferenceRef.current = new StressInference(stressModelRef.current);
+  //       console.log('✓ AI models initialized');
+  //     } catch (err) {
+  //       console.error('AI initialization error:', err);
+  //     }
 
-      // Load MediaPipe
-      await new Promise<void>((resolve) => {
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js';
-        script.crossOrigin = 'anonymous';
-        script.onload = () => resolve();
-        document.body.appendChild(script);
-      });
+  //     // Load MediaPipe
+  //     await new Promise<void>((resolve) => {
+  //       const script = document.createElement('script');
+  //       script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js';
+  //       script.crossOrigin = 'anonymous';
+  //       script.onload = () => resolve();
+  //       document.body.appendChild(script);
+  //     });
 
-      if (cancelled) return;
+  //     if (cancelled) return;
 
-      // @ts-ignore
-      const mesh = new window.FaceMesh({
-        locateFile: (file: string) =>
-          `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
-      });
+  //     // @ts-ignore
+  //     const mesh = new window.FaceMesh({
+  //       locateFile: (file: string) =>
+  //         `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+  //     });
 
-      mesh.setOptions({
-        maxNumFaces: 1,
-        refineLandmarks: true,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5,
-      });
+  //     mesh.setOptions({
+  //       maxNumFaces: 1,
+  //       refineLandmarks: true,
+  //       minDetectionConfidence: 0.5,
+  //       minTrackingConfidence: 0.5,
+  //     });
 
-      mesh.onResults((results: any) => handleResults.current(results));
+  //     mesh.onResults((results: any) => handleResults.current(results));
 
-      faceMeshRef.current = mesh;
-      setLibraryReady(true);
-    }
+  //     faceMeshRef.current = mesh;
+  //     setLibraryReady(true);
+  //   }
 
-    loadFaceMesh();
+  //   loadFaceMesh();
 
-    return () => {
-      cancelled = true;
-      faceMeshRef.current?.close?.();
-      stressModelRef.current?.dispose();
-      stopMediaAndAnalysis();
-    };
-  }, []);
+  //   return () => {
+  //     cancelled = true;
+  //     faceMeshRef.current?.close?.();
+  //     stressModelRef.current?.dispose();
+  //     stopMediaAndAnalysis();
+  //   };
+  // }, []);
+  const loadMediaPipe = async () => {
+    if ((window as any).FaceMesh) return;
+
+    await new Promise<void>((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js';
+      script.crossOrigin = 'anonymous';
+      script.onload = () => resolve();
+      document.body.appendChild(script);
+    });
+
+    const mesh = new (window as any).FaceMesh({
+      locateFile: (file: string) =>
+        `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+    });
+
+    mesh.setOptions({
+      maxNumFaces: 1,
+      refineLandmarks: true,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
+
+    faceMeshRef.current = mesh;
+  };
+
+
 
   const stopMediaAndAnalysis = useCallback(() => {
     if (animationFrameId.current) {
@@ -186,6 +213,43 @@ export function ExpressionAnalyzer() {
     inferenceRef.current?.reset();
   }, []);
 
+  // const requestPermissions = async () => {
+  //   setPhase('requesting');
+  //   setError(null);
+  //   setResult(null);
+  //   setFinalScores(null);
+
+  //   try {
+  //     const stream = await navigator.mediaDevices.getUserMedia({
+  //       video: { width: 640, height: 480 },
+  //       audio: false
+  //     });
+  //     mediaStreamRef.current = stream;
+
+  //     const video = videoRef.current;
+  //     if (!video) {
+  //       setError('Video element not found.');
+  //       setPhase('error');
+  //       return;
+  //     }
+
+  //     video.srcObject = stream;
+  //     video.onloadedmetadata = () => {
+  //       video.play();
+  //       setPhase('ready');
+  //     };
+  //   } catch (err) {
+  //     console.error("Error accessing media devices.", err);
+  //     setError("Permission denied. Please allow access to your camera in your browser settings.");
+  //     setPhase('error');
+  //     stopMediaAndAnalysis();
+  //     toast({
+  //       variant: 'destructive',
+  //       title: 'Camera Access Denied',
+  //       description: 'Please enable camera permissions to use this feature.',
+  //     });
+  //   }
+  // };
   const requestPermissions = async () => {
     setPhase('requesting');
     setError(null);
@@ -193,10 +257,18 @@ export function ExpressionAnalyzer() {
     setFinalScores(null);
 
     try {
+      // ✅ ADD THIS BLOCK HERE
+      if (!faceMeshRef.current) {
+        await loadMediaPipe();   // 👈 heavy MediaPipe work
+        setLibraryReady(true);
+      }
+
+      // 🎥 THEN ask for camera
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 640, height: 480 },
         audio: false
       });
+
       mediaStreamRef.current = stream;
 
       const video = videoRef.current;
@@ -211,18 +283,15 @@ export function ExpressionAnalyzer() {
         video.play();
         setPhase('ready');
       };
+
     } catch (err) {
       console.error("Error accessing media devices.", err);
-      setError("Permission denied. Please allow access to your camera in your browser settings.");
+      setError("Permission denied. Please allow access to your camera.");
       setPhase('error');
       stopMediaAndAnalysis();
-      toast({
-        variant: 'destructive',
-        title: 'Camera Access Denied',
-        description: 'Please enable camera permissions to use this feature.',
-      });
     }
   };
+
 
   const startAnalysis = useCallback(() => {
     if (!libraryReady || !videoRef.current || !faceMeshRef.current) return;
@@ -439,7 +508,6 @@ export function ExpressionAnalyzer() {
               <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto">Enable your camera for AI-powered stress analysis using real machine learning.</p>
               <Button
                 onClick={requestPermissions}
-                disabled={!libraryReady}
                 className="h-14 px-10 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg shadow-xl shadow-indigo-500/25 transition-all active:scale-95"
               >
                 {libraryReady ? 'Enable Camera' : <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading AI...</>}
@@ -469,7 +537,6 @@ export function ExpressionAnalyzer() {
               <p className="text-slate-500 dark:text-slate-400">Camera ready. Position yourself in well-lit area with face clearly visible.</p>
               <Button
                 onClick={startAnalysis}
-                disabled={!libraryReady}
                 className="h-14 px-12 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-lg shadow-xl shadow-emerald-500/25 transition-all active:scale-95"
               >
                 Start AI Analysis <Activity className="ml-2 h-5 w-5" />

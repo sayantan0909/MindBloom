@@ -23,7 +23,10 @@ export function FeatureCard({
             viewport={{ once: true }}
             transition={{ delay }}
         >
-            <Card className="bg-[#1A2F21]/40 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300 hover:-translate-y-1">
+            <Card
+                className="bg-[#1A2F21]/40 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300 hover:-translate-y-1"
+                style={{ willChange: 'transform' }}
+            >
                 <CardHeader>
                     {icon}
                     <CardTitle className="text-white">{title}</CardTitle>

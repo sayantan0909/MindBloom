@@ -24,7 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSupabaseUser } from '@/hooks/useSupabaseUser';
 import { supabase } from '@/lib/supabaseClient';
 import { UserProfileModal } from '@/components/dashboard/user-profile-modal';
@@ -41,7 +41,7 @@ export default function DashboardLayout({
 
   /* ---------- UI State ---------- */
   const [dockVisible, setDockVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  const lastScrollY = useRef(0);
   const [profileOpen, setProfileOpen] = useState(false);
 
   /* ---------- Auth Guard ---------- */
@@ -51,14 +51,29 @@ export default function DashboardLayout({
 
   /* ---------- Scroll Logic ---------- */
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      const current = window.scrollY;
-      setDockVisible(!(current > lastScrollY && current > 80));
-      setLastScrollY(current);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const current = window.scrollY;
+          const prev = lastScrollY.current;
+
+          if (current > prev && current > 80) {
+            setDockVisible(false);
+          } else {
+            setDockVisible(true);
+          }
+
+          lastScrollY.current = current;
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
-    window.addEventListener('scroll', handleScroll);
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
+  }, []);
 
   /* ---------- Logout ---------- */
   const handleLogout = async () => {
@@ -91,6 +106,7 @@ export default function DashboardLayout({
           className="ml-6"
           animate={{ opacity: dockVisible ? 1 : 0, x: dockVisible ? 0 : -40 }}
           transition={{ duration: 0.35 }}
+          style={{ willChange: 'opacity, transform' }}
         >
           <FloatingDock
             items={[

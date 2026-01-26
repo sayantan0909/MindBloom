@@ -120,6 +120,7 @@ export default function HomePage() {
           loop
           muted
           playsInline
+          preload="auto"
         >
           <source src="/hero.mp4" type="video/mp4" />
         </video>
@@ -135,6 +136,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
+            style={{ willChange: 'opacity, transform' }}
           >
             {/* <h1 className="text-5xl sm:text-7xl font-headline font-bold mb-6">
               <GradientText colors={['#C1E1C1', '#F9E4B7', '#D4AF37']}>
@@ -157,6 +159,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
+            style={{ willChange: 'opacity, transform' }}
           >
             MindBloom is a digital psychological intervention system designed to support your mental wellbeing with AI-driven insights, peer support, and personalized resources.
           </motion.p>
@@ -166,6 +169,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
+            style={{ willChange: 'opacity, transform' }}
           >
             <Link href="/login">
               <HoverBorderGradient
@@ -206,64 +210,6 @@ export default function HomePage() {
           <GradientText>Features</GradientText>
         </motion.h2>
 
-        {/* <div className="grid md:grid-cols-3 gap-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-          >
-            <Card className="bg-[#1A2F21]/40 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
-              <CardHeader>
-                <Brain className="h-8 w-8 text-[#8FBC8F] mb-2" />
-                <CardTitle className="text-white">AI-Driven Insights</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-300">
-                  Get personalized recommendations powered by advanced AI analysis.
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-          >
-            <Card className="bg-[#1A2F21]/40 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
-              <CardHeader>
-                <Users className="h-8 w-8 text-[#DEB887] mb-2" />
-                <CardTitle className="text-white">Peer Support</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-300">
-                  Connect with others on similar mental health journeys and share experiences.
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
-          >
-            <Card className="bg-[#1A2F21]/40 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
-              <CardHeader>
-                <Shield className="h-8 w-8 text-[#66CDAA] mb-2" />
-                <CardTitle className="text-white">Privacy First</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-300">
-                  Your data is encrypted and protected with enterprise-grade security.
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div> */}
         <div className="grid md:grid-cols-3 gap-8">
           <FeatureCard
             title="AI-Driven Insights"

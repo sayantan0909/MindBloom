@@ -120,9 +120,10 @@ export default function ResourcesPage() {
                         alt={resource.title}
                         width={600}
                         height={400}
+                        unoptimized
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        data-ai-hint={placeholder.imageHint}
                       />
+
                       <div className="absolute top-3 left-3">
                         <div className="px-3 py-1 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 shadow-sm">
                           {resource.category}
