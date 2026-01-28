@@ -14,6 +14,7 @@ import {
   Calendar,
   Settings,
   User,
+  Gamepad2,
 } from 'lucide-react';
 import { MindBloomLogo } from '@/components/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -114,6 +115,8 @@ export default function DashboardLayout({
               { title: 'Expression Analysis', icon: <Smile className="w-full h-full text-purple-600" />, href: '/dashboard/expression-analysis' },
               { title: 'Screening Test', icon: <ClipboardList className="w-full h-full text-pink-600" />, href: '/dashboard/screening' },
               { title: 'Relax & Reset', icon: <Wind className="w-full h-full text-cyan-600" />, href: '/dashboard/relax' },
+              // 🎮 GAME
+              { title: 'Mindful Game', icon: <Gamepad2 className="w-full h-full text-green-600" />, href: '/dashboard/mindful-maze' },
               { title: 'Resource Hub', icon: <BookOpen className="w-full h-full text-amber-600" />, href: '/dashboard/resources' },
               { title: 'AI Chatbot', icon: <Sparkles className="w-full h-full text-violet-600" />, href: '/dashboard/chatbot' },
               { title: 'Peer Support', icon: <MessageCircle className="w-full h-full text-blue-600" />, href: '/dashboard/peer-support' },

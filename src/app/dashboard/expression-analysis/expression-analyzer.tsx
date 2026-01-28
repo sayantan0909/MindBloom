@@ -1,6 +1,6 @@
 'use client';
 
-import * as FaceMeshModule from '@mediapipe/face_mesh';
+// import { FaceMesh } from '@mediapipe/face_mesh';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -105,39 +105,39 @@ export function ExpressionAnalyzer() {
 
   // ✅ FIXED: Initialize FaceMesh on mount (no CDN injection)
   useEffect(() => {
-    console.log('🔧 Initializing FaceMesh...');
+    let faceLandmarker: any;
 
-    const faceMesh = new FaceMeshModule.FaceMesh({
-      locateFile: (file: string) =>
-        `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
-    });
+    const init = async () => {
+      console.log('🔧 Initializing MediaPipe Tasks Vision...');
 
-    faceMesh.setOptions({
-      maxNumFaces: 1,
-      refineLandmarks: true,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5,
-    });
+      const vision = await import('@mediapipe/tasks-vision');
 
-    faceMesh.onResults((results: any) => handleResults.current(results));
+      const filesetResolver =
+        await vision.FilesetResolver.forVisionTasks(
+          'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+        );
 
-    faceMeshRef.current = faceMesh;
+      faceLandmarker = await vision.FaceLandmarker.createFromOptions(
+        filesetResolver,
+        {
+          baseOptions: {
+            modelAssetPath:
+              'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+          },
+          runningMode: 'VIDEO',
+          numFaces: 1,
+        }
+      );
 
-    console.log('✅ FaceMesh initialized successfully');
+      faceMeshRef.current = faceLandmarker;
+      console.log('✅ FaceLandmarker ready');
+    };
+
+    init();
 
     return () => {
-      console.log('🧹 Cleaning up FaceMesh...');
-      faceMesh.close();
+      faceLandmarker?.close();
       faceMeshRef.current = null;
-
-      if (animationFrameId.current) {
-        cancelAnimationFrame(animationFrameId.current);
-      }
-      analysisTimers.current.forEach(clearTimeout);
-
-      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach(track => track.stop());
-      }
     };
   }, []); // Only run once on mount
 
@@ -299,7 +299,31 @@ export function ExpressionAnalyzer() {
 
     const processFrame = async () => {
       if (videoRef.current && faceMeshRef.current && ['baseline', 'analyzing', 'unknown'].includes(phaseRef.current)) {
-        await faceMeshRef.current.send({ image: videoRef.current });
+
+        const processFrame = () => {
+          if (
+            !videoRef.current ||
+            !faceMeshRef.current ||
+            !['baseline', 'analyzing', 'unknown'].includes(phaseRef.current)
+          ) {
+            return;
+          }
+
+          const now = performance.now();
+
+          const results = faceMeshRef.current.detectForVideo(
+            videoRef.current,
+            now
+          );
+
+          // 🔁 Adapt results to your existing pipeline
+          handleResults.current({
+            multiFaceLandmarks: results.faceLandmarks,
+          });
+
+          animationFrameId.current = requestAnimationFrame(processFrame);
+        };
+
         animationFrameId.current = requestAnimationFrame(processFrame);
       }
     };
