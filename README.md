@@ -1,5 +1,13 @@
 This is a NextJS starter .
 
+# Install Guide 
+npm install 
+npm install lucide-react
+npm install framer-motion
+npm install next react react-dom
+npm install emoji-picker-react
+
+
 To get started, take a look at src/app/page.tsx.
 P2P Support System Implementation
 Phase 1: Database & Backend Setup

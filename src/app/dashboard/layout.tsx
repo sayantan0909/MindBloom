@@ -24,7 +24,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { useSupabaseUser } from '@/hooks/useSupabaseUser';
 import { supabase } from '@/lib/supabaseClient';
@@ -39,6 +39,9 @@ export default function DashboardLayout({
 }) {
   const { user, loading } = useSupabaseUser();
   const router = useRouter();
+  const pathname = usePathname();
+  const hideSidebar = pathname.startsWith('/dashboard/peer-support');
+
 
   /* ---------- UI State ---------- */
   const [dockVisible, setDockVisible] = useState(true);
@@ -102,7 +105,7 @@ export default function DashboardLayout({
       {/* <MouseTrail /> */}
 
       {/* FLOATING DOCK — UNCHANGED */}
-      <motion.div className="hidden md:block fixed left-0 top-24 z-50 w-20">
+      {/* <motion.div className="hidden md:block fixed left-0 top-24 z-50 w-20">
         <motion.div
           className="ml-6"
           animate={{ opacity: dockVisible ? 1 : 0, x: dockVisible ? 0 : -40 }}
@@ -126,7 +129,33 @@ export default function DashboardLayout({
             desktopClassName="flex-col gap-4 py-5 px-3 rounded-[28px] bg-[rgba(255,255,255,0.65)] backdrop-blur-[20px] border border-white/40 shadow-[0_20px_60px_rgba(120,90,255,0.25)]"
           />
         </motion.div>
-      </motion.div>
+      </motion.div> */}
+      {!hideSidebar && (
+        <motion.div className="hidden md:block fixed left-0 top-24 z-50 w-20">
+          <motion.div
+            className="ml-6"
+            animate={{ opacity: dockVisible ? 1 : 0, x: dockVisible ? 0 : -40 }}
+            transition={{ duration: 0.35 }}
+            style={{ willChange: 'opacity, transform' }}
+          >
+            <FloatingDock
+              items={[
+                { title: 'Dashboard', icon: <Home className="w-full h-full text-indigo-600" />, href: '/dashboard' },
+                { title: 'Expression Analysis', icon: <Smile className="w-full h-full text-purple-600" />, href: '/dashboard/expression-analysis' },
+                { title: 'Screening Test', icon: <ClipboardList className="w-full h-full text-pink-600" />, href: '/dashboard/screening' },
+                { title: 'Relax & Reset', icon: <Wind className="w-full h-full text-cyan-600" />, href: '/dashboard/relax' },
+                { title: 'Mindful Game', icon: <Gamepad2 className="w-full h-full text-green-600" />, href: '/dashboard/mindful-maze' },
+                { title: 'Resource Hub', icon: <BookOpen className="w-full h-full text-amber-600" />, href: '/dashboard/resources' },
+                { title: 'AI Chatbot', icon: <Sparkles className="w-full h-full text-violet-600" />, href: '/dashboard/chatbot' },
+                { title: 'Peer Support', icon: <MessageCircle className="w-full h-full text-blue-600" />, href: '/dashboard/peer-support' },
+                { title: 'Counsellor Booking', icon: <Calendar className="w-full h-full text-emerald-600" />, href: '/dashboard/booking' },
+                { title: 'Settings', icon: <Settings className="w-full h-full text-slate-600" />, href: '/dashboard/admin' },
+              ]}
+              desktopClassName="flex-col gap-4 py-5 px-3 rounded-[28px] bg-[rgba(255,255,255,0.65)] backdrop-blur-[20px] border border-white/40 shadow-[0_20px_60px_rgba(120,90,255,0.25)]"
+            />
+          </motion.div>
+        </motion.div>
+      )}
 
       {/* CONTENT */}
       <div className="flex flex-col min-h-screen w-full">
@@ -189,7 +218,16 @@ export default function DashboardLayout({
           </DropdownMenu>
         </header>
 
-        <main className="flex-1 min-h-[calc(100vh-4rem)] pl-20 md:pl-24 pt-10 p-4 sm:p-6 lg:p-10">
+        {/* <main className="flex-1 min-h-[calc(100vh-4rem)] pl-20 md:pl-24 pt-10 p-4 sm:p-6 lg:p-10"> */}
+        <main
+          className={`
+            flex-1 min-h-[calc(100vh-4rem)]
+            pt-10
+            px-4 sm:px-6 lg:px-10
+            ${hideSidebar ? 'pl-0' : 'pl-24'}
+          `}
+        >
+
           {children}
 
           {/* ✅ CORRECT PROP NAME */}

@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Users, MessageCircle, Sparkles, Heart, ArrowLeft, RefreshCw, Loader2 } from 'lucide-react';
 import { SUPPORT_ROOMS } from '@/types/peer-support';
-
+import { useRouter } from 'next/navigation';
 interface HomeViewProps {
     userId: string | null;
     isSupportMode: boolean;
@@ -29,9 +29,21 @@ export function HomeView({
     onJoinChat,
     getIconComponent
 }: HomeViewProps) {
+    const router = useRouter();
     return (
         <div className="min-h-screen bg-transparent p-6">
-            <div className="max-w-6xl mx-auto space-y-8">
+            <div className="relative max-w-6xl mx-auto space-y-8">
+                {/* 👈 BACK BUTTON (ADD THIS BLOCK) */}
+                <div className="absolute top-6 left-6 z-10">
+                    <Button
+                        variant="ghost"
+                        onClick={() => router.push('/dashboard')}
+                        className="flex items-center gap-2 text-slate-600 hover:text-indigo-600"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        Back to Dashboard
+                    </Button>
+                </div>
                 <div className="text-center space-y-4 py-8">
                     <div className="mx-auto bg-gradient-to-br from-blue-500 to-indigo-600 p-6 rounded-3xl w-fit shadow-lg">
                         <Users className="h-12 w-12 text-white" />
