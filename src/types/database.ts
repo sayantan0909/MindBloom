@@ -59,6 +59,37 @@ export interface Database {
                     is_active?: boolean
                 }
             }
+            notifications: {
+                Row: {
+                    id: string
+                    user_id: string | null
+                    title: string
+                    message: string
+                    type: string | null
+                    is_read: boolean | null
+                    link: string | null
+                    created_at: string | null
+                }
+                Insert: {
+                    id?: string
+                    user_id?: string | null
+                    title: string
+                    message: string
+                    type?: string | null
+                    is_read?: boolean | null
+                    link?: string | null
+                    created_at?: string | null
+                }
+                Update: {
+                    user_id?: string | null
+                    title?: string
+                    message?: string
+                    type?: string | null
+                    is_read?: boolean | null
+                    link?: string | null
+                    created_at?: string | null
+                }
+            }
             expression_sessions: {
                 Row: {
                     id: string
@@ -678,38 +709,7 @@ export interface Database {
                     created_at?: string
                 }
             }
-            notifications: {
-                Row: {
-                    id: string
-                    user_id: string
-                    type: 'appointment' | 'forum_response' | 'system' | 'wellness_tip'
-                    title: string
-                    message: string
-                    link: string | null
-                    is_read: boolean
-                    created_at: string
-                }
-                Insert: {
-                    id?: string
-                    user_id: string
-                    type: 'appointment' | 'forum_response' | 'system' | 'wellness_tip'
-                    title: string
-                    message: string
-                    link?: string | null
-                    is_read?: boolean
-                    created_at?: string
-                }
-                Update: {
-                    id?: string
-                    user_id?: string
-                    type?: 'appointment' | 'forum_response' | 'system' | 'wellness_tip'
-                    title?: string
-                    message?: string
-                    link?: string | null
-                    is_read?: boolean
-                    created_at?: string
-                }
-            }
+
             translations: {
                 Row: {
                     id: string
@@ -745,3 +745,5 @@ export interface Database {
         }
     }
 }
+
+

@@ -1,5 +1,6 @@
 'use client';
 import MouseTrail from '@/components/ui/mouse-trail';
+import { NotificationsMenu } from '@/components/notifications/NotificationsMenu';
 import { Button } from '@/components/ui/button';
 import {
   Bell,
@@ -100,35 +101,10 @@ export default function DashboardLayout({
 
   return (
     <div className="relative flex w-full overflow-x-hidden font-sans bg-gradient-to-br from-indigo-50/30 via-purple-50/30 to-pink-50/30">
-
-      {/* 🌿 CALMING MOUSE TRAIL (GLOBAL, NON-INTERACTIVE) */}
-      {/* <MouseTrail /> */}
+      {/* 🔔 GLOBAL NOTIFICATION LISTENER REMOVED (Moved to NotificationsMenu) */}
 
       {/* FLOATING DOCK — UNCHANGED */}
       {/* <motion.div className="hidden md:block fixed left-0 top-24 z-50 w-20">
-        <motion.div
-          className="ml-6"
-          animate={{ opacity: dockVisible ? 1 : 0, x: dockVisible ? 0 : -40 }}
-          transition={{ duration: 0.35 }}
-          style={{ willChange: 'opacity, transform' }}
-        >
-          <FloatingDock
-            items={[
-              { title: 'Dashboard', icon: <Home className="w-full h-full text-indigo-600" />, href: '/dashboard' },
-              { title: 'Expression Analysis', icon: <Smile className="w-full h-full text-purple-600" />, href: '/dashboard/expression-analysis' },
-              { title: 'Screening Test', icon: <ClipboardList className="w-full h-full text-pink-600" />, href: '/dashboard/screening' },
-              { title: 'Relax & Reset', icon: <Wind className="w-full h-full text-cyan-600" />, href: '/dashboard/relax' },
-              // 🎮 GAME
-              { title: 'Mindful Game', icon: <Gamepad2 className="w-full h-full text-green-600" />, href: '/dashboard/mindful-maze' },
-              { title: 'Resource Hub', icon: <BookOpen className="w-full h-full text-amber-600" />, href: '/dashboard/resources' },
-              { title: 'AI Chatbot', icon: <Sparkles className="w-full h-full text-violet-600" />, href: '/dashboard/chatbot' },
-              { title: 'Peer Support', icon: <MessageCircle className="w-full h-full text-blue-600" />, href: '/dashboard/peer-support' },
-              { title: 'Counsellor Booking', icon: <Calendar className="w-full h-full text-emerald-600" />, href: '/dashboard/booking' },
-              { title: 'Settings', icon: <Settings className="w-full h-full text-slate-600" />, href: '/dashboard/admin' },
-            ]}
-            desktopClassName="flex-col gap-4 py-5 px-3 rounded-[28px] bg-[rgba(255,255,255,0.65)] backdrop-blur-[20px] border border-white/40 shadow-[0_20px_60px_rgba(120,90,255,0.25)]"
-          />
-        </motion.div>
       </motion.div> */}
       {!hideSidebar && (
         <motion.div className="hidden md:block fixed left-0 top-24 z-50 w-20">
@@ -181,9 +157,7 @@ export default function DashboardLayout({
 
           <div className="flex-1" />
 
-          <Button variant="ghost" size="icon" className="rounded-2xl hover:bg-indigo-50">
-            <Bell className="h-5 w-5 text-slate-600" />
-          </Button>
+          <NotificationsMenu userId={user?.id ?? null} />
 
           {/* 👇 PROFILE OPTION */}
           <DropdownMenu>

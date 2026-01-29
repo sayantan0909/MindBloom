@@ -1,13 +1,14 @@
 import { Badge } from '@/components/ui/badge';
+import { PeerSupportMessage } from '@/types/peer-support';
 
 interface MessageBubbleProps {
-    msg: any;
+    msg: PeerSupportMessage;
     userId: string | null;
 }
 
 export function MessageBubble({ msg, userId }: MessageBubbleProps) {
-    const isUser = msg.sender === 'user' || msg.sender_id === userId;
-    const isSystem = msg.sender === 'system' || msg.sender_type === 'system';
+    const isUser = msg.sender_type === 'user' || msg.sender_id === userId;
+    const isSystem = msg.sender_type === 'system';
 
     if (isSystem) {
         return (

@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react';
+import { PeerSupportMessage } from '@/types/peer-support';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,8 +10,8 @@ import { TypingIndicator } from '../components/TypingIndicator';
 import { ChatInput } from '../components/ChatInput';
 
 interface ChatViewProps {
-    messages: any[];
-    chatHistory: any[];
+    messages: PeerSupportMessage[];
+    chatHistory: PeerSupportMessage[];
     isAiMode: boolean;
     userId: string | null;
     isTyping: boolean;
@@ -85,7 +86,7 @@ export function ChatView({
 
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-slate-50/50 dark:bg-gray-900/30">
-                {displayMessages.map((msg: any) => (
+                {displayMessages.map((msg: PeerSupportMessage) => (
                     <MessageBubble key={msg.id} msg={msg} userId={userId} />
                 ))}
 
@@ -99,6 +100,7 @@ export function ChatView({
                 onInputChange={onInputChange}
                 onSendMessage={onSendMessage}
                 disabled={false}
+                isAiMode={isAiMode}
             />
         </div>
     );
