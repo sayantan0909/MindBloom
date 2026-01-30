@@ -43,26 +43,69 @@ export async function POST(request: Request) {
         if (chat_id) {
             console.log('Listener attempting to join chat:', chat_id);
 
-            const { data: claimedChat, error } = await db
+            // First verify the chat exists and is waiting
+            const { data: existingChat, error: fetchError } = await db
                 .from('peer_support_chats')
-                .update({
-                    recipient_id: user.id,
-                    status: 'active'
-                })
+                .select('*')
                 .eq('id', chat_id)
-                .eq('status', 'waiting')
-                .select()
-                .maybeSingle();
+                .single();
 
-            if (error || !claimedChat) {
-                console.warn('Join failed — chat taken or invalid:', chat_id);
+            if (fetchError || !existingChat) {
+                console.warn('Chat not found:', chat_id, fetchError);
+                return NextResponse.json(
+                    { error: 'Chat not found' },
+                    { status: 404 }
+                );
+            }
+
+            // Check if chat is still waiting
+            if (existingChat.status !== 'waiting') {
+                console.warn('Chat no longer waiting:', existingChat.status);
                 return NextResponse.json(
                     { error: 'Chat already taken or unavailable' },
                     { status: 409 }
                 );
             }
 
-            console.log('Chat successfully joined:', claimedChat.id);
+            // Check if trying to join own chat
+            if (existingChat.initiator_id === user.id) {
+                console.warn('User trying to join own chat');
+                return NextResponse.json(
+                    { error: 'Cannot join your own chat' },
+                    { status: 400 }
+                );
+            }
+
+            // Now update - NO NOTIFICATION CREATION
+            const { data: claimedChat, error: updateError } = await db
+                .from('peer_support_chats')
+                .update({
+                    recipient_id: user.id,
+                    status: 'active',
+                    last_message_at: new Date().toISOString()
+                })
+                .eq('id', chat_id)
+                .eq('status', 'waiting') // Race condition protection
+                .select()
+                .maybeSingle();
+
+            if (updateError) {
+                console.error('Update error:', updateError);
+                return NextResponse.json(
+                    { error: 'Database update failed: ' + updateError.message },
+                    { status: 500 }
+                );
+            }
+
+            if (!claimedChat) {
+                console.warn('Update returned null - race condition or RLS block');
+                return NextResponse.json(
+                    { error: 'Chat already taken (race condition)' },
+                    { status: 409 }
+                );
+            }
+
+            console.log('✅ Chat successfully joined:', claimedChat.id);
 
             return NextResponse.json({
                 matched: true,
@@ -82,6 +125,7 @@ export async function POST(request: Request) {
             .maybeSingle();
 
         if (activeChat) {
+            console.log('Reusing active chat:', activeChat.id);
             return NextResponse.json({
                 matched: true,
                 chat_id: activeChat.id,
@@ -104,19 +148,25 @@ export async function POST(request: Request) {
                 .maybeSingle();
 
             if (waitingChat) {
-                const { data: claimedChat } = await db
+                // Try to claim it - NO NOTIFICATION CREATION
+                const { data: claimedChat, error: claimError } = await db
                     .from('peer_support_chats')
                     .update({
                         recipient_id: user.id,
-                        status: 'active'
+                        status: 'active',
+                        last_message_at: new Date().toISOString()
                     })
                     .eq('id', waitingChat.id)
                     .eq('status', 'waiting')
                     .select()
                     .maybeSingle();
 
+                if (claimError) {
+                    console.error('Auto-match claim error:', claimError);
+                }
+
                 if (claimedChat) {
-                    console.log('Auto-matched with waiting peer:', claimedChat.id);
+                    console.log('✅ Auto-matched with waiting peer:', claimedChat.id);
 
                     return NextResponse.json({
                         matched: true,
@@ -151,12 +201,12 @@ export async function POST(request: Request) {
         if (createError || !newChat) {
             console.error('Failed to create waiting chat:', createError);
             return NextResponse.json(
-                { error: 'Failed to create waiting chat' },
+                { error: 'Failed to create waiting chat: ' + createError?.message },
                 { status: 500 }
             );
         }
 
-        console.log('Waiting chat created:', newChat.id);
+        console.log('✅ Waiting chat created:', newChat.id);
 
         return NextResponse.json({
             matched: false,

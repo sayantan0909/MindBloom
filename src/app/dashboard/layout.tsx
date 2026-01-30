@@ -1,6 +1,7 @@
 'use client';
 import MouseTrail from '@/components/ui/mouse-trail';
 import { NotificationsMenu } from '@/components/notifications/NotificationsMenu';
+
 import { Button } from '@/components/ui/button';
 import {
   Bell,

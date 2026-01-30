@@ -38,7 +38,7 @@ IMPORTANT GUIDELINES:
 Remember: You're a fellow student who cares and wants to listen.`;
 
         const model = genAI.getGenerativeModel({
-            model: 'gemini-1.5-flash',
+            model: 'gemini-1.5-pro',
             generationConfig: {
                 temperature: 0.7,
                 maxOutputTokens: 250,

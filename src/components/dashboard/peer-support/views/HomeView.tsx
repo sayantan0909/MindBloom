@@ -10,7 +10,7 @@ interface HomeViewProps {
     setIsSupportMode: (v: boolean) => void;
     waitingChats: any[];
     isLoadingWaiting: boolean;
-    isJoining: boolean;
+    isJoiningChat: (chatId: string) => boolean;
     onRefresh: () => void;
     onStartConnection: () => void;
     onJoinChat: (chat: any) => void;
@@ -23,7 +23,7 @@ export function HomeView({
     setIsSupportMode,
     waitingChats,
     isLoadingWaiting,
-    isJoining,
+    isJoiningChat,
     onRefresh,
     onStartConnection,
     onJoinChat,
@@ -152,37 +152,43 @@ export function HomeView({
                                 <p className="text-xs text-slate-400">Current ID: {userId || 'Loading...'}</p>
                             </div>
                         ) : (
-                            waitingChats.map(chat => {
-                                const room = SUPPORT_ROOMS.find(r => r.id === chat.room_id);
-                                const Icon = getIconComponent(chat.room_id);
-                                return (
-                                    <Card key={chat.id} className="border-2 hover:border-emerald-500 dark:hover:border-emerald-500/50 transition-all duration-300 hover:shadow-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm group">
-                                        <CardHeader>
-                                            <div className="flex items-center gap-3">
-                                                <div className={`p-2 rounded-xl bg-gradient-to-br ${room?.color || 'from-slate-500 to-slate-600'}`}>
-                                                    <Icon className="h-5 w-5 text-white" />
+                            waitingChats
+                                .filter(chat =>
+                                    chat.status === 'waiting' &&
+                                    chat.initiator_id !== userId
+                                )
+                                .map(chat => {
+                                    const room = SUPPORT_ROOMS.find(r => r.id === chat.room_id);
+                                    const Icon = getIconComponent(chat.room_id);
+                                    const isThisChatJoining = isJoiningChat(chat.id);
+                                    return (
+                                        <Card key={chat.id} className="border-2 hover:border-emerald-500 dark:hover:border-emerald-500/50 transition-all duration-300 hover:shadow-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm group">
+                                            <CardHeader>
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`p-2 rounded-xl bg-gradient-to-br ${room?.color || 'from-slate-500 to-slate-600'}`}>
+                                                        <Icon className="h-5 w-5 text-white" />
+                                                    </div>
+                                                    <div>
+                                                        <CardTitle className="text-lg dark:text-white">{room?.name || 'General Support'}</CardTitle>
+                                                        <CardDescription className="text-xs">Waiting for {Math.floor((Date.now() - new Date(chat.created_at).getTime()) / 60000)}m</CardDescription>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <CardTitle className="text-lg dark:text-white">{room?.name || 'General Support'}</CardTitle>
-                                                    <CardDescription className="text-xs">Waiting for {Math.floor((Date.now() - new Date(chat.created_at).getTime()) / 60000)}m</CardDescription>
-                                                </div>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p className="text-sm text-slate-600 dark:text-slate-300 italic line-clamp-2">
-                                                "{chat.first_message || 'Feeling overwhelmed and looking for someone to talk to...'}"
-                                            </p>
-                                            <Button
-                                                disabled={isJoining}
-                                                onClick={() => onJoinChat(chat)}
-                                                className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-lg border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 transition-all"
-                                            >
-                                                {isJoining ? 'Joining...' : 'Accept & Listen'}
-                                            </Button>
-                                        </CardContent>
-                                    </Card>
-                                );
-                            })
+                                            </CardHeader>
+                                            <CardContent>
+                                                <p className="text-sm text-slate-600 dark:text-slate-300 italic line-clamp-2">
+                                                    "{chat.first_message || 'Feeling overwhelmed and looking for someone to talk to...'}"
+                                                </p>
+                                                <Button
+                                                    disabled={isThisChatJoining}
+                                                    onClick={() => onJoinChat(chat)}
+                                                    className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-lg border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 transition-all"
+                                                >
+                                                    {isThisChatJoining ? 'Joining...' : 'Accept & Listen'}
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+                                    );
+                                })
                         )}
                     </div>
                 )}

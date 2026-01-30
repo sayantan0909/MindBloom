@@ -37,11 +37,11 @@ interface NotificationsMenuProps {
 const getIcon = (type: NotificationType) => {
     switch (type) {
         case 'user_waiting':
-            return <Users className="h-4 w-4 text-amber-500" />;
+            return <Users className="h-4 w-4 text-emerald-500" />;
         case 'peer_joined':
-            return <CheckCircle className="h-4 w-4 text-green-500" />;
+            return <CheckCircle className="h-4 w-4 text-blue-500" />;
         case 'new_message':
-            return <MessageCircle className="h-4 w-4 text-blue-500" />;
+            return <MessageCircle className="h-4 w-4 text-indigo-500" />;
         default:
             return <Info className="h-4 w-4 text-slate-500" />;
     }
@@ -63,18 +63,19 @@ export function NotificationsMenu({ userId }: NotificationsMenuProps) {
         if (!userId) return;
 
         const fetchProfileId = async () => {
+            // Note: In our system profile.id IS the auth_user_id, but checking the profiles table ensures the profile exists
             const { data, error } = await supabase
-                .from('users')
+                .from('profiles')
                 .select('id')
-                .eq('auth_user_id', userId)
+                .eq('id', userId) // Assuming id is the primary key and matches auth.uid
                 .single<{ id: string }>();
 
             if (error || !data) {
-                console.error('❌ Failed to fetch profile id:', error);
+                console.error('❌ Failed to fetch profile:', error);
                 return;
             }
 
-            console.log('✅ PROFILE ID:', data.id);
+            // console.log('✅ PROFILE ID:', data.id);
             setProfileId(data.id);
         };
 

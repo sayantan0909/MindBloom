@@ -59,6 +59,56 @@ export interface Database {
                     is_active?: boolean
                 }
             }
+            profiles: {
+                Row: {
+                    id: string
+                    email: string
+                    name: string | null
+                    avatar_url: string | null
+                    language_preference: string | null
+                    date_of_birth: string | null
+                    gender: string | null
+                    phone: string | null
+                    college_name: string | null
+                    department: string | null
+                    year_of_study: number | null
+                    created_at: string
+                    last_login: string | null
+                    is_active: boolean
+                }
+                Insert: {
+                    id: string
+                    email: string
+                    name?: string | null
+                    avatar_url?: string | null
+                    language_preference?: string | null
+                    date_of_birth?: string | null
+                    gender?: string | null
+                    phone?: string | null
+                    college_name?: string | null
+                    department?: string | null
+                    year_of_study?: number | null
+                    created_at?: string
+                    last_login?: string | null
+                    is_active?: boolean
+                }
+                Update: {
+                    id?: string
+                    email?: string
+                    name?: string | null
+                    avatar_url?: string | null
+                    language_preference?: string | null
+                    date_of_birth?: string | null
+                    gender?: string | null
+                    phone?: string | null
+                    college_name?: string | null
+                    department?: string | null
+                    year_of_study?: number | null
+                    created_at?: string
+                    last_login?: string | null
+                    is_active?: boolean
+                }
+            }
             notifications: {
                 Row: {
                     id: string
@@ -81,6 +131,7 @@ export interface Database {
                     created_at?: string | null
                 }
                 Update: {
+                    id?: string
                     user_id?: string | null
                     title?: string
                     message?: string

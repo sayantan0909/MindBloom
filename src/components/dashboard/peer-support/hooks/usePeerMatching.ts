@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { SUPPORT_ROOMS } from '@/types/peer-support';
 
@@ -7,11 +7,15 @@ const supabase: any = createClient();
 export function usePeerMatching(userId: string | null, currentView: string) {
     const [waitingChats, setWaitingChats] = useState<any[]>([]);
     const [isLoadingWaiting, setIsLoadingWaiting] = useState(false);
-    const [isJoining, setIsJoining] = useState(false);
+    // const [joiningChats, setJoiningChats] = useState<Map<string, boolean>>(new Map());
+    const attemptedJoinsRef = useRef<Set<string>>(new Set());
+    const [joiningChatId, setJoiningChatId] = useState<string | null>(null);
+
 
     const fetchWaiting = async () => {
+        // if (currentView !== 'home' || !userId) return;
+        // if (currentView !== 'home' || !userId || joiningChats.size > 0) return;
         if (currentView !== 'home' || !userId) return;
-
         setIsLoadingWaiting(true);
         console.log('--- Fetching Waiting Peers ---', { userId });
 
@@ -74,27 +78,89 @@ export function usePeerMatching(userId: string | null, currentView: string) {
         }
     };
 
+    // const joinChat = async (chatId: string, roomId: string) => {
+    //     // Prevent duplicate joins
+    //     if (joiningChats.get(chatId)) {
+    //         console.warn('Already joining chat:', chatId);
+    //         return { status: 429, data: { error: 'Already joining this chat' } };
+    //     }
+
+    //     // Set joining state for this specific chat
+    //     setJoiningChats(prev => {
+    //         const next = new Map(prev);
+    //         next.set(chatId, true);
+    //         return next;
+    //     });
+
+    //     try {
+    //         const response = await fetch('/api/peer-support/match', {
+    //             method: 'POST',
+    //             headers: { 'Content-Type': 'application/json' },
+    //             body: JSON.stringify({
+    //                 room_id: roomId,
+    //                 chat_id: chatId
+    //             })
+    //         });
+    //         // 
+    //         const data = await response.json();
+    //         if (response.status === 409) {
+    //             return { status: 409, data: null }; // silent conflict
+    //         }
+    //         return { status: response.status, data };
+
+    //     } finally {
+    //         // Clear joining state for this chat
+    //         setJoiningChats(prev => {
+    //             const next = new Map(prev);
+    //             next.delete(chatId);
+    //             return next;
+    //         });
+    //     }
+    // };
     const joinChat = async (chatId: string, roomId: string) => {
-        setIsJoining(true);
+        // HARD BLOCK: never try same chat twice
+        if (attemptedJoinsRef.current.has(chatId)) {
+            return { status: 409, data: null };
+        }
+
+        attemptedJoinsRef.current.add(chatId);
+        setJoiningChatId(chatId);
+
         try {
             const response = await fetch('/api/peer-support/match', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     room_id: roomId,
-                    chat_id: chatId // Fixed to use chat_id as per latest user update
+                    chat_id: chatId
                 })
             });
-            return { status: response.status, data: await response.json() };
+
+            const data = await response.json();
+
+            // 409 = final, do NOT retry
+            if (response.status === 409) {
+                return { status: 409, data: null };
+            }
+
+            return { status: response.status, data };
         } finally {
-            setIsJoining(false);
+            setJoiningChatId(null);
         }
+    };
+
+
+    // const isJoiningChat = (chatId: string): boolean => {
+    //     return joiningChats.get(chatId) || false;
+    // };
+    const isJoiningChat = (chatId: string): boolean => {
+        return joiningChatId === chatId;
     };
 
     return {
         waitingChats,
         isLoadingWaiting,
-        isJoining,
+        isJoiningChat,
         fetchWaiting,
         handleRoomSelect,
         joinChat
