@@ -192,9 +192,9 @@ const MouseTrail = () => {
         className="w-full h-full"
         style={{ mixBlendMode: 'screen' }}
       />
-      <div className="absolute bottom-8 left-8 text-sm opacity-40 text-gray-400">
+      {/* <div className="absolute bottom-8 left-8 text-sm opacity-40 text-gray-400">
         Move slowly. Breathe. You are allowed to be here.
-      </div>
+      </div> */}
     </div>
   );
 };
