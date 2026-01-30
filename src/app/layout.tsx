@@ -1,10 +1,6 @@
-'use client';
-
 import './globals.css';
 import Script from 'next/script';
-import { ThemeProvider } from '@/components/theme-provider';
-import { Toaster } from '@/components/ui/toaster';
-import MouseTrail from '@/components/ui/mouse-trail';
+import Provider from './provider';
 
 export default function RootLayout({
   children,
@@ -19,6 +15,26 @@ export default function RootLayout({
           name="description"
           content="A Digital Psychological Intervention System"
         />
+
+        {/* Favicons */}
+        <link
+          rel="apple-touch-icon"
+          sizes="180x180"
+          href="/favicon_io/apple-touch-icon.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="32x32"
+          href="/favicon_io/favicon-32x32.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="16x16"
+          href="/favicon_io/favicon-16x16.png"
+        />
+        <link rel="manifest" href="/favicon_io/site.webmanifest" />
 
         {/* Google Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -40,13 +56,11 @@ export default function RootLayout({
       </head>
 
       <body className="font-body antialiased text-foreground transition-colors duration-200">
-        <ThemeProvider>
-          {/* Global Ambient Background */}
+        <Provider>
           <div className="app-background">
             {children}
-            <Toaster />
           </div>
-        </ThemeProvider>
+        </Provider>
       </body>
     </html>
   );
