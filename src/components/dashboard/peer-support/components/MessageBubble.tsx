@@ -7,7 +7,8 @@ interface MessageBubbleProps {
 }
 
 export function MessageBubble({ msg, userId }: MessageBubbleProps) {
-    const isUser = msg.sender_type === 'user' || msg.sender_id === userId;
+    // const isUser = msg.sender_type === 'user' || msg.sender_id === userId;
+    const isUser = msg.sender_id === userId;
     const isSystem = msg.sender_type === 'system';
 
     if (isSystem) {
